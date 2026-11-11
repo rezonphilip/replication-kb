@@ -19,6 +19,8 @@ last_verified: 2026-11-11
 
 RepAzureRes uploads packet files to Azure Blob in chunks so an interrupted upload can resume, then calls back so the rest of the chain can notify the other side. It adapts chunk size to measured network speed. If uploads stop, the sending side shows packets as transferred to outbox but the receiver never sees them.
 
+> **V2V (vessel-to-vessel) is a dropped feature.** The V2V routes, procedures and message types mentioned in this article still exist in the code and database but are not in use; do not troubleshoot them. See DATA-MSREP-OFFVSL.
+
 ## Role in replication
 
 RepAzureRes is the upload half of SmartSync's file channel. Keywords: azure upload, resumable upload, chunk, block, resume, callback, V2V resend.
@@ -48,7 +50,7 @@ Routes are under `AzureResUpload` (`RepAzureRes/MariApps.PAL.Rep.Azure.Res.Servi
 |---|---|---|
 | `ResumeUpload` | Queue/resume upload of given files | L41 |
 | `UploadPendingData` | Run upload now | L53 |
-| `V2VAzureResendData` | Resend for vessel-to-vessel | L61 |
+| `V2VAzureResendData` | Resend for vessel-to-vessel (dropped feature) | L61 |
 | `CheckAzureSettings` | Verify storage settings | L68 |
 | `InitiateAzureCallback` | Run callback now | L91 |
 | `ReadingStaticCount`, `ChronoStaticCleansing` | Show / clear in-memory counters | L82, L99 |

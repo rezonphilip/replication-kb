@@ -29,6 +29,7 @@ How the 19 services divide by role, as confirmed by the platform team on 2026-11
 | Priority Replication: send side | RepCompression, RepMedium, RepPacketCreation, RepPacketInterim, RepProData, RepQueueManage, RepSplit, RepTrack |
 | Priority Replication: receive side | RepAckn, RepAcquisition, RepDecompress, RepFileMerge, RepSaveData |
 
+
 - **SmartSync** is the name of the transport mechanism (Service Bus messaging + Azure Blob upload/download). It is shared by all replication mechanisms.
 - **RepTransfer** is an adapter over the transport; it serves Priority Replication and may serve iRep transfer flows.
 - **RepIntegration** orchestrates Priority Replication end to end and handles only the *transfer* part of iRep (not iRep data preparation, ingestion or packet creation).
@@ -37,6 +38,8 @@ How the 19 services divide by role, as confirmed by the platform team on 2026-11
 ## RepAzure
 
 SmartSync transport. Keywords: RepAzure, azure, routes, stored procedures.
+
+**Background loop / timers:** `WorkerService` (`RepAzure/MariApps.PAL.Rep.Azure.Service/Program.cs#L33`), `: BackgroundService` (`RepAzure/MariApps.PAL.Rep.Azure.Service/WorkerService.cs#L15`), `interval, stoppingToken` (`RepAzure/MariApps.PAL.Rep.Azure.Service/WorkerService.cs#L88`)
 
 **Routes** (controller route names):
 
@@ -58,40 +61,15 @@ SmartSync transport. Keywords: RepAzure, azure, routes, stored procedures.
 
 - `SbusSend/SendAcknowledgement` — `RepAzure/MariApps.PAL.Rep.Azure.Service/SL/BulkTransferAckSL.cs#L25`
 
-**Stored procedures / SQL objects referenced:**
-
-- `REP.PR_GET_PARAM_DATA` — `RepAzure/MariApps.PAL.Rep.Azure.DAL/AzureRepository.cs#L25`
-- `REP.PR_GET_TRANSFER_DATA` — `RepAzure/MariApps.PAL.Rep.Azure.DAL/AzureRepository.cs#L168`
-- `REP_AZURE_STORAGE_ACCOUNT_KEY` — `RepAzure/MariApps.PAL.Rep.Azure.DAL/AzureRepository.cs#L262`
-- `REP_AZURE_STORAGE_ACCOUNT_NAME` — `RepAzure/MariApps.PAL.Rep.Azure.DAL/AzureRepository.cs#L258`
-- `REP_CLIENT_CODE` — `RepAzure/MariApps.PAL.Rep.Azure.DAL/AzureRepository.cs#L270`
-- `REP_CLIENT_ENVIROMENT_UNICID` — `RepAzure/MariApps.PAL.Rep.Azure.DAL/AzureRepository.cs#L274`
-- `REP_LOCATION` — `RepAzure/MariApps.PAL.Rep.Azure.DAL/AzureRepository.cs#L278`
-- `REP_STORAGE_CONTAINER_NAME` — `RepAzure/MariApps.PAL.Rep.Azure.DAL/AzureRepository.cs#L266`
-- `[REP].[PR_PENDING_UPLOAD_FILE]` — `RepAzure/MariApps.PAL.Rep.Azure.DAL/AzureRepository.cs#L104`
-- `[REP].[PR_REP_GET_SETTINGS]` — `RepAzure/MariApps.PAL.Rep.Azure.DAL/AzureRepository.cs#L297`
-- `[REP].[READ_VESSEL_LIST]` — `RepAzure/MariApps.PAL.Rep.Azure.DAL/AzureRepository.cs#L55`
-- `[REP].[REP_GET_AZURE_SETTINGS]` — `RepAzure/MariApps.PAL.Rep.Azure.DAL/AzureRepository.cs#L250`
-- `[REP].[REP_INSERT_UPLOAD_FILE]` — `RepAzure/MariApps.PAL.Rep.Azure.DAL/AzureRepository.cs#L79`
-- `[REP].[REP_INSERT_UPLOAD_FILE_BULK]` — `RepAzure/MariApps.PAL.Rep.Azure.DAL/AzureRepository.cs#L212`
-- `[Rep].[PR_UPLOAD_FILE_BULK]` — `RepAzure/MariApps.PAL.Rep.Azure.DAL/AzureRepository.cs#L216`
-
-**CO_Parameters / parameter keys read:**
-
-- `REP_AZURE_STORAGE_ACCOUNT_KEY` **(secret: never copy the value)** — `RepAzure/MariApps.PAL.Rep.Azure.DAL/AzureRepository.cs#L262`
-- `REP_AZURE_STORAGE_ACCOUNT_NAME` — `RepAzure/MariApps.PAL.Rep.Azure.DAL/AzureRepository.cs#L258`
-- `REP_CLIENT_CODE` — `RepAzure/MariApps.PAL.Rep.Azure.DAL/AzureRepository.cs#L270`
-- `REP_CLIENT_ENVIROMENT_UNICID` — `RepAzure/MariApps.PAL.Rep.Azure.DAL/AzureRepository.cs#L274`
-- `REP_LOCATION` — `RepAzure/MariApps.PAL.Rep.Azure.DAL/AzureRepository.cs#L278`
-- `REP_STORAGE_CONTAINER_NAME` — `RepAzure/MariApps.PAL.Rep.Azure.DAL/AzureRepository.cs#L266`
-
 **appsettings sections bound:** `AzureSettings`, `BasicSettings`, `DataConduitSettings`, `LargeFileLaneSettings`, `ServiceConfig`, `WorkerServiceSettings`
 
-**Logger calls found:** 70 (full list in `inventory/ms-rep-logs.md`).
+**Logger calls found:** 177 (full list in `inventory/'+REPO+'-logs.md`).
 
 ## RepAzureRes
 
 SmartSync transport. Keywords: RepAzureRes, azureres, routes, stored procedures.
+
+**Background loop / timers:** `milliSeconds` (`RepAzureRes/MariApps.PAL.Rep.Azure.Res.Service/BL/CommonOperationBL.cs#L397`), `heartbeatInterval, cancellationToken` (`RepAzureRes/MariApps.PAL.Rep.Azure.Res.Service/BL/UploadProcessBL.cs#L639`), `WorkerService` (`RepAzureRes/MariApps.PAL.Rep.Azure.Res.Service/Program.cs#L28`), `: BackgroundService` (`RepAzureRes/MariApps.PAL.Rep.Azure.Res.Service/WorkerService.cs#L9`), `interval, stoppingToken` (`RepAzureRes/MariApps.PAL.Rep.Azure.Res.Service/WorkerService.cs#L86`)
 
 **Routes** (controller route names):
 
@@ -116,14 +94,18 @@ SmartSync transport. Keywords: RepAzureRes, azureres, routes, stored procedures.
 
 **appsettings sections bound:** `AzureSettings`, `BasicSettings`, `DataConduitSettings`, `LargeFileLaneSettings`, `ServiceConfig`, `WorkerServiceSettings`
 
-**Logger calls found:** 164 (full list in `inventory/ms-rep-logs.md`).
+**Logger calls found:** 249 (full list in `inventory/'+REPO+'-logs.md`).
 
 ## RepSbus
 
 SmartSync transport. Keywords: RepSbus, sbus, routes, stored procedures.
 
+**Background loop / timers:** `delayMs` (`RepSbus/MariApps.PAL.Rep.Sbus.Service/BL/ServiceBusOperation.cs#L1285`), `TimeSpan.FromSeconds(ackTimeoutSeconds` (`RepSbus/MariApps.PAL.Rep.Sbus.Service/BL/TroubleshootLauncher.cs#L127`), `WorkerService` (`RepSbus/MariApps.PAL.Rep.Sbus.Service/Program.cs#L33`), `: BackgroundService` (`RepSbus/MariApps.PAL.Rep.Sbus.Service/WorkerService.cs#L15`), `interval, stoppingToken` (`RepSbus/MariApps.PAL.Rep.Sbus.Service/WorkerService.cs#L145`)
+
 **Routes** (controller route names):
 
+- `api/[controller]` — `RepSbus/MariApps.PAL.Rep.Sbus.Service/Controllers/AdminController.cs#L9`
+- `Message/Meta` — `RepSbus/MariApps.PAL.Rep.Sbus.Service/Controllers/AdminController.cs#L24`
 - `SbusSend` — `RepSbus/MariApps.PAL.Rep.Sbus.Service/Controllers/SbusSendController.cs#L13`
 - `SendNotification` — `RepSbus/MariApps.PAL.Rep.Sbus.Service/Controllers/SbusSendController.cs#L31`
 - `SendNotificationGeneric` — `RepSbus/MariApps.PAL.Rep.Sbus.Service/Controllers/SbusSendController.cs#L41`
@@ -138,28 +120,25 @@ SmartSync transport. Keywords: RepSbus, sbus, routes, stored procedures.
 - `TestService` — `RepSbus/MariApps.PAL.Rep.Sbus.Service/Controllers/SbusSendController.cs#L130`
 - `GetVersion` — `RepSbus/MariApps.PAL.Rep.Sbus.Service/Controllers/SbusSendController.cs#L139`
 - `ReadStaticVariable` — `RepSbus/MariApps.PAL.Rep.Sbus.Service/Controllers/SbusSendController.cs#L146`
-- `api/[controller]` — `RepSbus/MariApps.PAL.Rep.Sbus.Service/Controllers/AdminController.cs#L9`
-- `Message/Meta` — `RepSbus/MariApps.PAL.Rep.Sbus.Service/Controllers/AdminController.cs#L24`
 
 **Calls other services** (route fragments found in code):
 
 - `Message/Meta` — `RepSbus/MariApps.PAL.Rep.Sbus.Service/Controllers/AdminController.cs#L24`
+- `DbServiceSbus/Insert-Bulk-Transfer-Status` — `RepSbus/MariApps.PAL.Rep.Sbus.Service/SL/DblogWSL.cs#L113`
 
 **Stored procedures / SQL objects referenced:**
 
-- `REP_INTERGRATION_API_URL` — `RepSbus/MariApps.PAL.Rep.Sbus.Service/BL/ServiceBusOperation.cs#L1910`
-- `REP_INTERGRATION_BASE_URL` — `RepSbus/MariApps.PAL.Rep.Sbus.Service/BL/ServiceBusOperation.cs#L1904`
-- `REP_WINDOWS_SERVICE` — `RepSbus/MariApps.PAL.Rep.Sbus.Service/BL/ServiceBusBL.cs#L435`
+- `REP_INTERGRATION_API_URL` — `RepSbus/MariApps.PAL.Rep.Sbus.Service/BL/ServiceBusBL.cs#L1381`
+- `REP_INTERGRATION_BASE_URL` — `RepSbus/MariApps.PAL.Rep.Sbus.Service/BL/ServiceBusBL.cs#L1373`
 
 **CO_Parameters / parameter keys read:**
 
-- `REP_INTERGRATION_API_URL` — `RepSbus/MariApps.PAL.Rep.Sbus.Service/BL/ServiceBusOperation.cs#L1910`
-- `REP_INTERGRATION_BASE_URL` — `RepSbus/MariApps.PAL.Rep.Sbus.Service/BL/ServiceBusOperation.cs#L1904`
-- `REP_WINDOWS_SERVICE` — `RepSbus/MariApps.PAL.Rep.Sbus.Service/BL/ServiceBusBL.cs#L435`
+- `REP_INTERGRATION_API_URL` — `RepSbus/MariApps.PAL.Rep.Sbus.Service/BL/ServiceBusBL.cs#L1381`
+- `REP_INTERGRATION_BASE_URL` — `RepSbus/MariApps.PAL.Rep.Sbus.Service/BL/ServiceBusBL.cs#L1373`
 
 **appsettings sections bound:** `BasicSettings`, `ServiceBusSettings`, `ServiceConfig`, `TroubleshootRunSettings`
 
-**Logger calls found:** 310 (full list in `inventory/ms-rep-logs.md`).
+**Logger calls found:** 525 (full list in `inventory/'+REPO+'-logs.md`).
 
 ## RepTransfer
 
@@ -186,10 +165,10 @@ Transfer adapter (over SmartSync). Keywords: RepTransfer, transfer, routes, stor
 - `PR_REP_ROOT` — `RepTransfer/MariApps.PAL.Rep.Transfer.Service/BL/TransferBL.cs#L442`
 - `REP.PR_GET_PARAM_DATA` — `RepTransfer/MariApps.PAL.Rep.Transfer.DAL/TransferRepository.cs#L41`
 - `REP.PR_GET_RESEND_PACKET` — `RepTransfer/MariApps.PAL.Rep.Transfer.DAL/TransferRepository.cs#L286`
-- `REP.PR_GET_TRANSFER_DATA` — `RepTransfer/MariApps.PAL.Rep.Transfer.DAL/TransferRepository.cs#L206`
+- `REP.PR_GET_TRANSFER_DATA` — `RepTransfer/MariApps.PAL.Rep.Transfer.DAL/SqlNamedQueries.cs#L11`
 - `REP.PR_REP_UPDATE_PACKET_DATA` — `RepTransfer/MariApps.PAL.Rep.Transfer.DAL/TransferRepository.cs#L235`
 - `REP_LOG` — `RepTransfer/MariApps.PAL.Rep.Transfer.DAL/TransferRepository.cs#L330`
-- `REP_PR_AZURE_IN` — `RepTransfer/MariApps.PAL.Rep.Transfer.Service/BL/TransferPacketExtBL.cs#L42`
+- `REP_PR_AZURE_IN` — `RepTransfer/MariApps.PAL.Rep.Transfer.Service/BL/TransferBL.cs#L213`
 - `REP_PR_AZURE_SENT` — `RepTransfer/MariApps.PAL.Rep.Transfer.Service/BL/TransferPacketExtBL.cs#L506`
 - `[Rep].[PR_SAVE_ERROR_LOG]` — `RepTransfer/MariApps.PAL.Rep.Transfer.DAL/TransferRepository.cs#L327`
 
@@ -198,18 +177,22 @@ Transfer adapter (over SmartSync). Keywords: RepTransfer, transfer, routes, stor
 - `PR_PARAM` — `RepTransfer/MariApps.PAL.Rep.Transfer.Service/BL/TransferBL.cs#L442`
 - `PR_REP_ROOT` — `RepTransfer/MariApps.PAL.Rep.Transfer.Service/BL/TransferBL.cs#L442`
 - `REP_LOG` — `RepTransfer/MariApps.PAL.Rep.Transfer.DAL/TransferRepository.cs#L330`
-- `REP_PR_AZURE_IN` — `RepTransfer/MariApps.PAL.Rep.Transfer.Service/BL/TransferPacketExtBL.cs#L42`
+- `REP_PR_AZURE_IN` — `RepTransfer/MariApps.PAL.Rep.Transfer.Service/BL/TransferBL.cs#L213`
 - `REP_PR_AZURE_SENT` — `RepTransfer/MariApps.PAL.Rep.Transfer.Service/BL/TransferPacketExtBL.cs#L506`
 
-**Logger calls found:** 45 (full list in `inventory/ms-rep-logs.md`).
+**Logger calls found:** 74 (full list in `inventory/'+REPO+'-logs.md`).
 
 ## RepIntegration
 
 Orchestrator (Priority Replication + iRep transfer). Keywords: RepIntegration, integration, routes, stored procedures.
 
+**Background loop / timers:** `FolderTimeout` (`RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationService.cs#L383`), `5000, cancellationToken` (`RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/MachineProbe.cs#L166`), `WorkerService` (`RepIntegration/MariApps.PAL.Rep.Integration.Service/Startup.cs#L68`), `: BackgroundService` (`RepIntegration/MariApps.PAL.Rep.Integration.Service/WorkerService.cs#L15`), `interval, stoppingToken` (`RepIntegration/MariApps.PAL.Rep.Integration.Service/WorkerService.cs#L111`)
+
 **Routes** (controller route names):
 
-- `Integration` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/Controllers/IntegrationController.cs#L24`
+- `Integration` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/Controllers/BulkTransferStatusController.cs#L14`
+- `BulkTransferStatus` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/Controllers/BulkTransferStatusController.cs#L28`
+- `EvaluateConfiguration` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/Controllers/ConfigEvaluationController.cs#L33`
 - `IntegrateTrackRecord` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/Controllers/IntegrationController.cs#L60`
 - `IntegrateTrackFile` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/Controllers/IntegrationController.cs#L102`
 - `IntegrateTrackExport` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/Controllers/IntegrationController.cs#L161`
@@ -236,11 +219,7 @@ Orchestrator (Priority Replication + iRep transfer). Keywords: RepIntegration, i
 - `GetPendingStaticData` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/Controllers/IntegrationController.cs#L521`
 - `TestService` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/Controllers/IntegrationController.cs#L538`
 - `Version` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/Controllers/IntegrationController.cs#L547`
-- `api/[controller]` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/Controllers/ScriptExecutionController.cs#L12`
-- `ExecuteScript-And-GetResult` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/Controllers/ScriptExecutionController.cs#L28`
-- `BulkTransferStatus` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/Controllers/BulkTransferStatusController.cs#L28`
-- `EvaluateConfiguration` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/Controllers/ConfigEvaluationController.cs#L33`
-- `Get-Summary` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/Controllers/LogSummaryController.cs#L33`
+- `api/[controller]` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/Controllers/IntegrationQueueController.cs#L10`
 - `Initiallise-Basic-Data` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/Controllers/IntegrationQueueController.cs#L27`
 - `General-Notification` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/Controllers/IntegrationQueueController.cs#L39`
 - `Initiate-Import-Queue` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/Controllers/IntegrationQueueController.cs#L53`
@@ -250,6 +229,7 @@ Orchestrator (Priority Replication + iRep transfer). Keywords: RepIntegration, i
 - `Verify-Gen-Export-Validity` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/Controllers/IntegrationQueueController.cs#L106`
 - `Initiate-Acquisition-Process` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/Controllers/IntegrationQueueController.cs#L117`
 - `Insert-Dynamic-Table-Data` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/Controllers/IntegrationQueueController.cs#L131`
+- `ExecuteScript-And-GetResult` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/Controllers/ScriptExecutionController.cs#L28`
 
 **Calls other services** (route fragments found in code):
 
@@ -277,31 +257,29 @@ Orchestrator (Priority Replication + iRep transfer). Keywords: RepIntegration, i
 - `AzureResUpload/CheckAzureSettings` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationService.cs#L71`
 - `SbusSend/SbusVerifyAccess` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationService.cs#L72`
 - `SbusSend/ReceiverStatus` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationService.cs#L73`
+- `Ackn/Destination-Handler` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/SL/AcknSL.cs#L31`
+- `Acquisition/Initiate-Acquisition` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/SL/AcquisitionSL.cs#L30`
+- `CompressBatch/ZipBatch` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/SL/CompressionSL.cs#L33`
+- `DbPckLog/ReadCompressionType` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/SL/DBlogWSL.cs#L32`
+- `Decompress/Extract-Packet` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/SL/DecompressSL.cs#L31`
+- `Merge/Splits` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/SL/FileMergeSL.cs#L32`
 - `Packet/Create` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/SL/PacketCreationSL.cs#L35`
 - `Packet/GeneratePacketExt` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/SL/PacketCreationSL.cs#L58`
 - `Packet/PacketGen` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/SL/PacketCreationSL.cs#L98`
-- `Merge/Splits` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/SL/FileMergeSL.cs#L32`
-- `CompressBatch/ZipBatch` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/SL/CompressionSL.cs#L33`
-- `DbPckLog/ReadCompressionType` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/SL/DBlogWSL.cs#L32`
-- `Merge/FILE` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/FileMergeServiceClient.cs#L28`
-- `Decompress/EXTRACT` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/DecompressServiceClient.cs#L28`
+- `Transfer/Transfer-Priority-Handler` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/SL/TransferSL.cs#L37`
+- `Ackn/SendAckn` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/AcknServiceClient.cs#L33`
+- `Acquisition/FILE` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/AcquisitionServiceClient.cs#L39`
+- `Mail/SENT` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/AlertMailServiceClient.cs#L25`
 - `AzureResUpload/ResumeUpload` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/AzureResServiceClient.cs#L26`
 - `AzureResUpload/V2VAzureResendData` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/AzureResServiceClient.cs#L36`
-- `SbusSend/SendNotificationV2V` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/SbusNotificationServiceClient.cs#L41`
-- `SbusSend/StartReceive` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/SbusNotificationServiceClient.cs#L71`
-- `SbusSend/SendUpdate` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/SbusNotificationServiceClient.cs#L81`
-- `SbusSend/SendUpdateV2V` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/SbusNotificationServiceClient.cs#L86`
-- `SbusSend/SendNotificationGeneric` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/SbusNotificationServiceClient.cs#L92`
-- `Mail/SENT` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/AlertMailServiceClient.cs#L25`
-- `Split/Zip` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/SplitServiceClient.cs#L29`
-- `Split/SplitExt` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/SplitServiceClient.cs#L34`
+- `Azure/AzureDownloadByReference` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/AzureServiceClient.cs#L39`
+- `CheckService/CheckAllWinService` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/CheckServiceClient.cs#L34`
+- `CheckService/CheckWinServiceStatus` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/CheckServiceClient.cs#L49`
+- `CheckService/RestartWindowsServices` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/CheckServiceClient.cs#L71`
+- `CheckService/StopWindowsServices` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/CheckServiceClient.cs#L85`
+- `CheckService/StartWindowsServices` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/CheckServiceClient.cs#L99`
 - `Compress/ZIP` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/CompressionServiceClient.cs#L28`
-- `Medium/GetSizeRestriction` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/MediumServiceClient.cs#L28`
-- `ProData/ProcessData` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/ProDataServiceClient.cs#L29`
-- `Acquisition/FILE` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/AcquisitionServiceClient.cs#L37`
-- `SaveData/ProcessData` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/SaveDataServiceClient.cs#L28`
-- `QueueManage/GetQueueCount` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/QueueManageServiceClient.cs#L29`
-- `QueueManage/AddOrUpdateQueueCount` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/QueueManageServiceClient.cs#L34`
+- `Encryption/EncryptRepFile` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/CypherServiceClient.cs#L25`
 - `DBlogWrite/LogWrite` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/DBlogWServiceClient.cs#L54`
 - `DBlogWrite/LogWriteV2V` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/DBlogWServiceClient.cs#L65`
 - `DBlogWrite/LogWriteService` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/DBlogWServiceClient.cs#L78`
@@ -322,6 +300,27 @@ Orchestrator (Priority Replication + iRep transfer). Keywords: RepIntegration, i
 - `DBlogWrite/ReadApiCallLog` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/DBlogWServiceClient.cs#L197`
 - `DbServiceSbus/ReadExportConfigPath` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/DBlogWServiceClient.cs#L203`
 - `DbServiceSbus/ReadImportConfigPath` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/DBlogWServiceClient.cs#L210`
+- `Decompress/EXTRACT` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/DecompressServiceClient.cs#L28`
+- `Merge/FILE` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/FileMergeServiceClient.cs#L28`
+- `Medium/GetSizeRestriction` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/MediumServiceClient.cs#L28`
+- `PacketInterim/ReadPckCounter` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/PacketInterimClient.cs#L34`
+- `PacketInterim/CreateJsonFile` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/PacketInterimClient.cs#L39`
+- `PacketInterim/UpdatePacketStatus` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/PacketInterimClient.cs#L44`
+- `PacketInterim/UpdateExtPacketDataBulk` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/PacketInterimClient.cs#L54`
+- `ProData/ProcessData` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/ProDataServiceClient.cs#L29`
+- `QueueManage/GetQueueCount` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/QueueManageServiceClient.cs#L29`
+- `QueueManage/AddOrUpdateQueueCount` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/QueueManageServiceClient.cs#L34`
+- `SaveData/ProcessData` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/SaveDataServiceClient.cs#L28`
+- `SbusSend/SendNotificationV2V` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/SbusNotificationServiceClient.cs#L41`
+- `SbusSend/StartReceive` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/SbusNotificationServiceClient.cs#L71`
+- `SbusSend/SendUpdate` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/SbusNotificationServiceClient.cs#L81`
+- `SbusSend/SendUpdateV2V` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/SbusNotificationServiceClient.cs#L86`
+- `SbusSend/SendNotificationGeneric` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/SbusNotificationServiceClient.cs#L92`
+- `Split/Zip` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/SplitServiceClient.cs#L29`
+- `Split/SplitExt` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/SplitServiceClient.cs#L34`
+- `Track/SaveTrackChangeFile` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/TrackServiceClient.cs#L30`
+- `Track/SaveTrackChangeRecord` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/TrackServiceClient.cs#L39`
+- `Track/UpdateTrackStatus` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/TrackServiceClient.cs#L44`
 - `Transfer/TransferPacket` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/TransferServiceClient.cs#L35`
 - `Transfer/TransferPacketExt` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/TransferServiceClient.cs#L40`
 - `Transfer/TransferResendUploadV2V` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/TransferServiceClient.cs#L45`
@@ -329,21 +328,7 @@ Orchestrator (Priority Replication + iRep transfer). Keywords: RepIntegration, i
 - `Transfer/TransferPacketFolder` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/TransferServiceClient.cs#L59`
 - `Transfer/TransferResendPacket` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/TransferServiceClient.cs#L64`
 - `Transfer/TransferGeneral` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/TransferServiceClient.cs#L69`
-- `PacketInterim/ReadPckCounter` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/PacketInterimClient.cs#L34`
-- `PacketInterim/CreateJsonFile` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/PacketInterimClient.cs#L39`
-- `PacketInterim/UpdatePacketStatus` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/PacketInterimClient.cs#L44`
-- `PacketInterim/UpdateExtPacketDataBulk` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/PacketInterimClient.cs#L54`
-- `CheckService/CheckAllWinService` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/CheckServiceClient.cs#L34`
-- `CheckService/CheckWinServiceStatus` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/CheckServiceClient.cs#L49`
-- `CheckService/RestartWindowsServices` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/CheckServiceClient.cs#L71`
-- `CheckService/StopWindowsServices` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/CheckServiceClient.cs#L85`
-- `CheckService/StartWindowsServices` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/CheckServiceClient.cs#L99`
-- `Encryption/EncryptRepFile` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/CypherServiceClient.cs#L25`
-- `Azure/AzureDownloadByReference` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/AzureServiceClient.cs#L39`
-- `Ackn/SendAckn` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/AcknServiceClient.cs#L33`
-- `Track/SaveTrackChangeFile` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/TrackServiceClient.cs#L30`
-- `Track/SaveTrackChangeRecord` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/TrackServiceClient.cs#L39`
-- `Track/UpdateTrackStatus` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/TrackServiceClient.cs#L44`
+- `Transfer/Priority-Resend` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/ServiceClient/TransferServiceClient.cs#L74`
 
 **Stored procedures / SQL objects referenced:**
 
@@ -360,14 +345,14 @@ Orchestrator (Priority Replication + iRep transfer). Keywords: RepIntegration, i
 - `PR_REP_MAX_ATTACHMENT_SIZE` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/Validation/ValidationBL.cs#L215`
 - `PR_REP_READ_ALL_CHANNELS` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L50`
 - `PR_REP_READ_UPD_AZURE_FILE_Q` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L57`
-- `PR_REP_ROOT` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/IntegrationExportApiCallBL.cs#L907`
+- `PR_REP_ROOT` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L22`
 - `PR_REP_SPLIT_SIZE` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/IntegrationExportApiCallBL.cs#L702`
 - `PR_TRACK_` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/QueueHandler/ExportQueueProcess.cs#L236`
 - `REP.PRIORITY_RESEND_DATA` — `RepIntegration/MariApps.PAL.Rep.Integration.DAL/SqlNamedQueries.cs#L35`
 - `REP.PR_COMMON_ID_TYP` — `RepIntegration/MariApps.PAL.Rep.Integration.DAL/SqlNamedQueries.cs#L7`
 - `REP.PR_GET_PARAM_DATA` — `RepIntegration/MariApps.PAL.Rep.Integration.DAL/SqlNamedQueries.cs#L22`
 - `REP.PR_GET_TRANSFER_DATA` — `RepIntegration/MariApps.PAL.Rep.Integration.DAL/ConfigEvaluationRepository.cs#L85`
-- `REP.PR_GET_VESSEL_CODE` — `RepIntegration/MariApps.PAL.Rep.Integration.DAL/SqlNamedQueries.cs#L26`
+- `REP.PR_GET_VESSEL_CODE` — `RepIntegration/MariApps.PAL.Rep.Integration.DAL/ConfigEvaluationRepository.cs#L101`
 - `REP.PR_OUT_PACKET_TYP` — `RepIntegration/MariApps.PAL.Rep.Integration.DAL/SqlNamedQueries.cs#L19`
 - `REP.PR_PACKET_TRANSFER_INFO` — `RepIntegration/MariApps.PAL.Rep.Integration.DAL/SqlNamedQueries.cs#L52`
 - `REP.PR_REP_DELETE_OUT_TRACK_Q_DATA` — `RepIntegration/MariApps.PAL.Rep.Integration.DAL/SqlNamedQueries.cs#L48`
@@ -417,11 +402,11 @@ Orchestrator (Priority Replication + iRep transfer). Keywords: RepIntegration, i
 - `REP.UPD_TRACK_RECORD_STATUS` — `RepIntegration/MariApps.PAL.Rep.Integration.DAL/SqlNamedQueries.cs#L51`
 - `REP_AZURE_ROOT` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L22`
 - `REP_AZURE_STORAGE_ACCOUNT_KEY` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L38`
-- `REP_AZURE_STORAGE_ACCOUNT_NAME` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationService.cs#L465`
-- `REP_CHUNK_SIZE` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/IntegrationMainBL.cs#L518`
+- `REP_AZURE_STORAGE_ACCOUNT_NAME` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L22`
+- `REP_CHUNK_SIZE` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L23`
 - `REP_CLIENT_CODE` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L23`
 - `REP_CLIENT_ENVIROMENT_UNICID` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L23`
-- `REP_CODE` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L418`
+- `REP_CODE` — `RepIntegration/MariApps.PAL.Rep.Integration.DAL/ConfigEvaluationRepository.cs#L99`
 - `REP_FM_EMAIL_OUT` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L224`
 - `REP_GET_AZURE_SETTINGS` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L52`
 - `REP_GET_SBUS_SETTINGS` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L53`
@@ -429,20 +414,20 @@ Orchestrator (Priority Replication + iRep transfer). Keywords: RepIntegration, i
 - `REP_INTERGRATION_API_URL` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L27`
 - `REP_INTERGRATION_BASE_URL` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L27`
 - `REP_LOCATION` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L24`
-- `REP_OFF_ROOT` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationService.cs#L314`
-- `REP_PARALLEL_PROCESS_COUNT` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/IntegrationMainBL.cs#L1602`
+- `REP_OFF_ROOT` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L22`
+- `REP_PARALLEL_PROCESS_COUNT` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L23`
 - `REP_PR_` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationService.cs#L314`
-- `REP_PR_AZURE_IN` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/IntegrationMainBL.cs#L473`
+- `REP_PR_AZURE_IN` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L24`
 - `REP_PR_AZURE_SENT` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L27`
-- `REP_PR_KEY_MASTER_ID` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/DataConduitMethods/CommonDataConduit.cs#L1005`
+- `REP_PR_KEY_MASTER_ID` — `RepIntegration/MariApps.PAL.Rep.Integration.DAL/IntegrationRepository.cs#L476`
 - `REP_READ_BULK_TRANSFER_STATUS` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L60`
 - `REP_READ_TABLESETT_DETAILS_BY_ID` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L55`
 - `REP_READ_UPD_AZURE_RES_UPLOAD` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L56`
 - `REP_REALM_ROOT` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L224`
 - `REP_RETRY_COUNT` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L23`
 - `REP_SERVICEBUS_CONNECTION_STRING` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L38`
-- `REP_SOURCE_UNIQUE_ID` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/DataConduitMethods/CommonDataConduit.cs#L1006`
-- `REP_SOURCE_UNIQUE_OBJECT_TYPE` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/DataConduitMethods/CommonDataConduit.cs#L1007`
+- `REP_SOURCE_UNIQUE_ID` — `RepIntegration/MariApps.PAL.Rep.Integration.DAL/IntegrationRepository.cs#L477`
+- `REP_SOURCE_UNIQUE_OBJECT_TYPE` — `RepIntegration/MariApps.PAL.Rep.Integration.DAL/IntegrationRepository.cs#L478`
 - `REP_STORAGE_CONTAINER_NAME` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L22`
 - `REP_UPDATE_AZURE_RES_CHECKSUM` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L58`
 - `[REP].[PR_GET_PARAM_DATA]` — `RepIntegration/MariApps.PAL.Rep.Integration.DAL/IntegrationRepository.cs#L36`
@@ -484,16 +469,16 @@ Orchestrator (Priority Replication + iRep transfer). Keywords: RepIntegration, i
 - `PR_REP_MAX_ATTACHMENT_SIZE` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/Validation/ValidationBL.cs#L215`
 - `PR_REP_READ_ALL_CHANNELS` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L50`
 - `PR_REP_READ_UPD_AZURE_FILE_Q` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L57`
-- `PR_REP_ROOT` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/IntegrationExportApiCallBL.cs#L907`
+- `PR_REP_ROOT` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L22`
 - `PR_REP_SPLIT_SIZE` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/IntegrationExportApiCallBL.cs#L702`
 - `PR_TRACK_` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/QueueHandler/ExportQueueProcess.cs#L236`
 - `REP_AZURE_ROOT` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L22`
 - `REP_AZURE_STORAGE_ACCOUNT_KEY` **(secret: never copy the value)** — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L38`
-- `REP_AZURE_STORAGE_ACCOUNT_NAME` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationService.cs#L465`
-- `REP_CHUNK_SIZE` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/IntegrationMainBL.cs#L518`
+- `REP_AZURE_STORAGE_ACCOUNT_NAME` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L22`
+- `REP_CHUNK_SIZE` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L23`
 - `REP_CLIENT_CODE` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L23`
 - `REP_CLIENT_ENVIROMENT_UNICID` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L23`
-- `REP_CODE` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L418`
+- `REP_CODE` — `RepIntegration/MariApps.PAL.Rep.Integration.DAL/ConfigEvaluationRepository.cs#L99`
 - `REP_FM_EMAIL_OUT` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L224`
 - `REP_GET_AZURE_SETTINGS` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L52`
 - `REP_GET_SBUS_SETTINGS` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L53`
@@ -501,33 +486,42 @@ Orchestrator (Priority Replication + iRep transfer). Keywords: RepIntegration, i
 - `REP_INTERGRATION_API_URL` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L27`
 - `REP_INTERGRATION_BASE_URL` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L27`
 - `REP_LOCATION` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L24`
-- `REP_OFF_ROOT` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationService.cs#L314`
-- `REP_PARALLEL_PROCESS_COUNT` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/IntegrationMainBL.cs#L1602`
+- `REP_OFF_ROOT` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L22`
+- `REP_PARALLEL_PROCESS_COUNT` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L23`
 - `REP_PR_` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationService.cs#L314`
-- `REP_PR_AZURE_IN` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/IntegrationMainBL.cs#L473`
+- `REP_PR_AZURE_IN` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L24`
 - `REP_PR_AZURE_SENT` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L27`
-- `REP_PR_KEY_MASTER_ID` **(secret: never copy the value)** — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/DataConduitMethods/CommonDataConduit.cs#L1005`
+- `REP_PR_KEY_MASTER_ID` **(secret: never copy the value)** — `RepIntegration/MariApps.PAL.Rep.Integration.DAL/IntegrationRepository.cs#L476`
 - `REP_READ_BULK_TRANSFER_STATUS` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L60`
 - `REP_READ_TABLESETT_DETAILS_BY_ID` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L55`
 - `REP_READ_UPD_AZURE_RES_UPLOAD` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L56`
 - `REP_REALM_ROOT` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L224`
 - `REP_RETRY_COUNT` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L23`
 - `REP_SERVICEBUS_CONNECTION_STRING` **(secret: never copy the value)** — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L38`
-- `REP_SOURCE_UNIQUE_ID` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/DataConduitMethods/CommonDataConduit.cs#L1006`
-- `REP_SOURCE_UNIQUE_OBJECT_TYPE` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/DataConduitMethods/CommonDataConduit.cs#L1007`
+- `REP_SOURCE_UNIQUE_ID` — `RepIntegration/MariApps.PAL.Rep.Integration.DAL/IntegrationRepository.cs#L477`
+- `REP_SOURCE_UNIQUE_OBJECT_TYPE` — `RepIntegration/MariApps.PAL.Rep.Integration.DAL/IntegrationRepository.cs#L478`
 - `REP_STORAGE_CONTAINER_NAME` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L22`
 - `REP_UPDATE_AZURE_RES_CHECKSUM` — `RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/ConfigEvaluation/ConfigEvaluationRules.cs#L58`
 
 **appsettings sections bound:** `BasicSettings`, `ConfigEvaluationOptions`, `DataConduitSettings`, `RequestSettings`, `ScriptExecutionOptions`, `WorkerServiceSettings`
 
-**Logger calls found:** 570 (full list in `inventory/ms-rep-logs.md`).
+**Logger calls found:** 1021 (full list in `inventory/'+REPO+'-logs.md`).
 
 ## RepDBLogW
 
 Priority Replication core (DB gateway). Keywords: RepDBLogW, dblogw, routes, stored procedures.
 
+**Background loop / timers:** `delayMs` (`RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/DbPckLogRepository.cs#L45`), `delayMs, cancellationToken` (`RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/DbPckLogRepository.cs#L538`)
+
 **Routes** (controller route names):
 
+- `AzureDblog` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/AzureDblogController.cs#L15`
+- `CheckAzureResDataExists/{status}` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/AzureDblogController.cs#L33`
+- `CheckAzureDownloadDataExists/{status}` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/AzureDblogController.cs#L52`
+- `ProcessNgV4SyncHd` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/AzureDblogController.cs#L71`
+- `Packet-ImportQ-Save` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/AzureDblogController.cs#L86`
+- `Downloads-Save-Bulk` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/AzureDblogController.cs#L100`
+- `UpdateExportType/{vesselObjectId}/{exportType}` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/AzureDblogController.cs#L120`
 - `DBlogWrite` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/DBlogWController.cs#L16`
 - `LogWrite` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/DBlogWController.cs#L30`
 - `LogWriteV2V` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/DBlogWController.cs#L41`
@@ -537,13 +531,6 @@ Priority Replication core (DB gateway). Keywords: RepDBLogW, dblogw, routes, sto
 - `ReadApiCallLog` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/DBlogWController.cs#L87`
 - `TestService` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/DBlogWController.cs#L99`
 - `Version` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/DBlogWController.cs#L108`
-- `AzureDblog` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/AzureDblogController.cs#L15`
-- `CheckAzureResDataExists/{status}` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/AzureDblogController.cs#L33`
-- `CheckAzureDownloadDataExists/{status}` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/AzureDblogController.cs#L52`
-- `ProcessNgV4SyncHd` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/AzureDblogController.cs#L71`
-- `Packet-ImportQ-Save` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/AzureDblogController.cs#L86`
-- `Downloads-Save-Bulk` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/AzureDblogController.cs#L100`
-- `UpdateExportType/{vesselObjectId}/{exportType}` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/AzureDblogController.cs#L120`
 - `DbPckLog` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/DbPckLogController.cs#L16`
 - `UpdateOutPacketSource` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/DbPckLogController.cs#L27`
 - `GetExportParams` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/DbPckLogController.cs#L36`
@@ -580,7 +567,6 @@ Priority Replication core (DB gateway). Keywords: RepDBLogW, dblogw, routes, sto
 - `AzureGetAzureSettings` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/DbServiceSbusController.cs#L309`
 - `AzureGetSettings` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/DbServiceSbusController.cs#L317`
 - `AzureErrorLog` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/DbServiceSbusController.cs#L325`
-- `AzureInformationLog` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/DbServiceSbusController.cs#L333`
 - `ReadAzureFileDownloadQ` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/DbServiceSbusController.cs#L341`
 - `ReadUpdateAzureDownloadQ` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/DbServiceSbusController.cs#L349`
 - `UpdateAzureFileDownloadQ` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/DbServiceSbusController.cs#L357`
@@ -614,8 +600,7 @@ Priority Replication core (DB gateway). Keywords: RepDBLogW, dblogw, routes, sto
 **Stored procedures / SQL objects referenced:**
 
 - `PR_REP_IN_PACKET_HD_ID` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/DBlogWRepository.cs#L200`
-- `REP.PR_COMMON_ID_TYP` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/SqlNamedQueries.cs#L11`
-- `REP.PR_GET_PARAM_DATA` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/SqlNamedQueries.cs#L27`
+- `REP.PR_GET_PARAM_DATA` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/DbPckLogRepository.cs#L208`
 - `REP.PR_GET_TRANSFER_DATA` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L1306`
 - `REP.PR_REP_IMPORT_QUEUE_DT_TYP` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/SqlNamedQueries.cs#L13`
 - `REP.PR_REP_IMPORT_QUEUE_TYP` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/SqlNamedQueries.cs#L12`
@@ -633,9 +618,7 @@ Priority Replication core (DB gateway). Keywords: RepDBLogW, dblogw, routes, sto
 - `REP_INTERGRATION_` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L669`
 - `REP_INTERGRATION_API_URL` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L687`
 - `REP_INTERGRATION_BASE_URL` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L685`
-- `REP_IN_INBOX` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L154`
-- `REP_LOCATION` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L150`
-- `REP_MANUAL_OP_PATH` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/Rep2XDbRepository.cs#L87`
+- `REP_LOCATION` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L1070`
 - `REP_PARALLEL_PROCESS_COUNT` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L162`
 - `REP_RETRY_COUNT` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L1472`
 - `REP_SERVICEBUS_CONNECTION_STRING` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L158`
@@ -655,7 +638,7 @@ Priority Replication core (DB gateway). Keywords: RepDBLogW, dblogw, routes, sto
 - `[REP].[PR_REP_GET_PACKET_COUNTER]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L339`
 - `[REP].[PR_REP_GET_SETTINGS]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L1502`
 - `[REP].[PR_REP_INSERT_CHAT_Q]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L2799`
-- `[REP].[PR_REP_LOG_SAVE]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/SqlNamedQueries.cs#L20`
+- `[REP].[PR_REP_LOG_SAVE]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/DBlogWRepository.cs#L28`
 - `[REP].[PR_REP_READ_AZURE_FILE_Q]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L847`
 - `[REP].[PR_REP_SAVE_LOG_DB]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/DBlogWRepository.cs#L82`
 - `[REP].[PR_REP_SAVE_LOG_DB_BULK]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/DBlogWRepository.cs#L209`
@@ -672,7 +655,7 @@ Priority Replication core (DB gateway). Keywords: RepDBLogW, dblogw, routes, sto
 - `[REP].[REP_GET_DOWNLOAD_DATA_BY_ID]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L2757`
 - `[REP].[REP_GET_QUEUE_NAME]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L1926`
 - `[REP].[REP_GET_QUEUE_NAME_FOR_RECEIVER_V2V]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L1975`
-- `[REP].[REP_GET_SBUS_SETTINGS]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L1047`
+- `[REP].[REP_GET_SBUS_SETTINGS]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L1049`
 - `[REP].[REP_INSERT_AZURE_RES_UPLOAD]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L2420`
 - `[REP].[REP_INSERT_DOWNLOADS_BULK]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/AzureDblogRepository.cs#L125`
 - `[REP].[REP_INSERT_UPLOAD_FILE]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L1183`
@@ -680,7 +663,6 @@ Priority Replication core (DB gateway). Keywords: RepDBLogW, dblogw, routes, sto
 - `[REP].[REP_INS_DES_VALIDATE_Q_ITEM]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/Rep2IDbRepository.cs#L79`
 - `[REP].[REP_MISSING_PACKET_BULK_SAVE]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/DbPckLogRepository.cs#L514`
 - `[REP].[REP_PR_GET_TRACKCHANGE_DETAILS_V2V]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L2143`
-- `[REP].[REP_PR_READ_QUEUE_NAME]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L1825`
 - `[REP].[REP_PR_READ_SUBSCRIBER_LIST]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L1752`
 - `[REP].[REP_PR_SUBSCRIBER_LIST_LOG_TYP]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L1689`
 - `[REP].[REP_READ_AZURE_RES_UPLOAD]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L2538`
@@ -701,7 +683,6 @@ Priority Replication core (DB gateway). Keywords: RepDBLogW, dblogw, routes, sto
 - `[REP].[V2V_RESEND_LOG_OPERATIONS]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L2396`
 - `[Rep].[PR_GET_TRANSFER_DATA]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L1276`
 - `[Rep].[PR_UPLOAD_FILE_BULK]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L1372`
-- `[Rep].[REP_PR_EXT_PACKET_TYP]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/DbPckLogRepository.cs#L161`
 - `[Rep].[REP_SBUS_NOTIFICATION_INSERT]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L717`
 - `[Rep].[REP_SBUS_NOTIFICATION_INSERT_V2V]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L762`
 - `[Rep].[SAVE_SERVICE_STATUS]` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/DbPckLogRepository.cs#L364`
@@ -717,19 +698,19 @@ Priority Replication core (DB gateway). Keywords: RepDBLogW, dblogw, routes, sto
 - `REP_INTERGRATION_` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L669`
 - `REP_INTERGRATION_API_URL` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L687`
 - `REP_INTERGRATION_BASE_URL` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L685`
-- `REP_IN_INBOX` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L154`
-- `REP_LOCATION` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L150`
-- `REP_MANUAL_OP_PATH` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/Rep2XDbRepository.cs#L87`
+- `REP_LOCATION` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L1070`
 - `REP_PARALLEL_PROCESS_COUNT` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L162`
 - `REP_RETRY_COUNT` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L1472`
 - `REP_SERVICEBUS_CONNECTION_STRING` **(secret: never copy the value)** — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L158`
 - `REP_STORAGE_CONTAINER_NAME` — `RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L138`
 
-**Logger calls found:** 51 (full list in `inventory/ms-rep-logs.md`).
+**Logger calls found:** 230 (full list in `inventory/'+REPO+'-logs.md`).
 
 ## RepCompression
 
 Priority Replication: send side. Keywords: RepCompression, compression, routes, stored procedures.
+
+**Background loop / timers:** `milliSeconds` (`RepCompression/MariApps.PAL.Rep.Compress.Service/BL/CompressBL.cs#L455`)
 
 **Routes** (controller route names):
 
@@ -745,7 +726,6 @@ Priority Replication: send side. Keywords: RepCompression, compression, routes, 
 - `PR_PARAM` — `RepCompression/MariApps.PAL.Rep.Compress.Service/BL/CompressBL.cs#L42`
 - `PR_REP_ROOT` — `RepCompression/MariApps.PAL.Rep.Compress.Service/BL/CompressBL.cs#L42`
 - `REP.PR_REP_UPDATE_PACKET_DATA` — `RepCompression/MariApps.PAL.Rep.Compress.DAL/CompressRepository.cs#L50`
-- `REP_ZIP_UTILITY` — `RepCompression/MariApps.PAL.Rep.Compress.Service/Controllers/CompressController.cs#L35`
 - `[REP].[PR_GET_PARAM_DATA]` — `RepCompression/MariApps.PAL.Rep.Compress.DAL/CompressRepository.cs#L24`
 - `[REP].[UPDATE_EXT_PACKET_DATA]` — `RepCompression/MariApps.PAL.Rep.Compress.DAL/CompressRepository.cs#L98`
 
@@ -753,9 +733,8 @@ Priority Replication: send side. Keywords: RepCompression, compression, routes, 
 
 - `PR_PARAM` — `RepCompression/MariApps.PAL.Rep.Compress.Service/BL/CompressBL.cs#L42`
 - `PR_REP_ROOT` — `RepCompression/MariApps.PAL.Rep.Compress.Service/BL/CompressBL.cs#L42`
-- `REP_ZIP_UTILITY` — `RepCompression/MariApps.PAL.Rep.Compress.Service/Controllers/CompressController.cs#L35`
 
-**Logger calls found:** 7 (full list in `inventory/ms-rep-logs.md`).
+**Logger calls found:** 44 (full list in `inventory/'+REPO+'-logs.md`).
 
 ## RepMedium
 
@@ -779,11 +758,13 @@ Priority Replication: send side. Keywords: RepMedium, medium, routes, stored pro
 
 - `PR_REP_MAX_ATTACHMENT_SIZE` — `RepMedium/MariApps.PAL.Rep.Medium.DAL/MediumRepository.cs#L106`
 
-**Logger calls found:** 0 (full list in `inventory/ms-rep-logs.md`).
+**Logger calls found:** 9 (full list in `inventory/'+REPO+'-logs.md`).
 
 ## RepPacketCreation
 
 Priority Replication: send side. Keywords: RepPacketCreation, packetcreation, routes, stored procedures.
+
+**Background loop / timers:** `milliSeconds` (`RepPacketCreation/MariApps.PAL.Rep.PacketCreation.Service/BL/CommonOperationsBL.cs#L352`)
 
 **Routes** (controller route names):
 
@@ -798,12 +779,12 @@ Priority Replication: send side. Keywords: RepPacketCreation, packetcreation, ro
 **Stored procedures / SQL objects referenced:**
 
 - `PR_PACKET_INFO_` — `RepPacketCreation/MariApps.PAL.Rep.PacketCreation.Service/BL/PacketCreationBL.cs#L115`
-- `PR_PARAM` — `RepPacketCreation/MariApps.PAL.Rep.PacketCreation.Service/BL/ValidateInputBL.cs#L57`
+- `PR_PARAM` — `RepPacketCreation/MariApps.PAL.Rep.PacketCreation.Service/BL/GeneratePacketExtBL.cs#L43`
 - `PR_PCK_` — `RepPacketCreation/MariApps.PAL.Rep.PacketCreation.Service/BL/CommonOperationsBL.cs#L108`
 - `PR_REP_MAX_ATTACHMENT_SIZE` — `RepPacketCreation/MariApps.PAL.Rep.PacketCreation.Service/BL/ValidateInputBL.cs#L57`
-- `PR_REP_ROOT` — `RepPacketCreation/MariApps.PAL.Rep.PacketCreation.Service/BL/PacketCreationBL.cs#L47`
+- `PR_REP_ROOT` — `RepPacketCreation/MariApps.PAL.Rep.PacketCreation.Service/BL/GeneratePacketExtBL.cs#L43`
 - `REP.PR_GET_PACKET_DATA` — `RepPacketCreation/MariApps.PAL.Rep.PacketCreation.DAL/PacketCreationRepository.cs#L218`
-- `REP.PR_GET_TRANSFER_DATA` — `RepPacketCreation/MariApps.PAL.Rep.PacketCreation.DAL/PacketCreationRepository.cs#L302`
+- `REP.PR_GET_TRANSFER_DATA` — `RepPacketCreation/MariApps.PAL.Rep.PacketCreation.DAL/PacketCreationRepository.cs#L372`
 - `REP.PR_GET_VESSEL_CODE` — `RepPacketCreation/MariApps.PAL.Rep.PacketCreation.DAL/PacketCreationRepository.cs#L66`
 - `REP.PR_REP_GET_PACKET_COUNTER` — `RepPacketCreation/MariApps.PAL.Rep.PacketCreation.DAL/SqlNamedQueries.cs#L12`
 - `REP.PR_REP_OUT_FILE_DT` — `RepPacketCreation/MariApps.PAL.Rep.PacketCreation.DAL/SqlNamedQueries.cs#L7`
@@ -819,18 +800,17 @@ Priority Replication: send side. Keywords: RepPacketCreation, packetcreation, ro
 - `[REP].[SAVE_EXT_PACKET_DETAILS]` — `RepPacketCreation/MariApps.PAL.Rep.PacketCreation.DAL/PacketCreationRepository.cs#L452`
 - `[REP].[SAVE_SOURCE_SUB_DETAILS]` — `RepPacketCreation/MariApps.PAL.Rep.PacketCreation.DAL/PacketCreationRepository.cs#L477`
 - `[REP].[UPDATE_PR_COUNTER_SETTINGS]` — `RepPacketCreation/MariApps.PAL.Rep.PacketCreation.DAL/PacketCreationRepository.cs#L428`
-- `[Rep].[REP_PR_EXT_PACKET_TYP]` — `RepPacketCreation/MariApps.PAL.Rep.PacketCreation.DAL/PacketCreationRepository.cs#L456`
 
 **CO_Parameters / parameter keys read:**
 
 - `PR_PACKET_INFO_` — `RepPacketCreation/MariApps.PAL.Rep.PacketCreation.Service/BL/PacketCreationBL.cs#L115`
-- `PR_PARAM` — `RepPacketCreation/MariApps.PAL.Rep.PacketCreation.Service/BL/ValidateInputBL.cs#L57`
+- `PR_PARAM` — `RepPacketCreation/MariApps.PAL.Rep.PacketCreation.Service/BL/GeneratePacketExtBL.cs#L43`
 - `PR_PCK_` — `RepPacketCreation/MariApps.PAL.Rep.PacketCreation.Service/BL/CommonOperationsBL.cs#L108`
 - `PR_REP_MAX_ATTACHMENT_SIZE` — `RepPacketCreation/MariApps.PAL.Rep.PacketCreation.Service/BL/ValidateInputBL.cs#L57`
-- `PR_REP_ROOT` — `RepPacketCreation/MariApps.PAL.Rep.PacketCreation.Service/BL/PacketCreationBL.cs#L47`
+- `PR_REP_ROOT` — `RepPacketCreation/MariApps.PAL.Rep.PacketCreation.Service/BL/GeneratePacketExtBL.cs#L43`
 - `REP_CODE` — `RepPacketCreation/MariApps.PAL.Rep.PacketCreation.DAL/PacketCreationRepository.cs#L69`
 
-**Logger calls found:** 33 (full list in `inventory/ms-rep-logs.md`).
+**Logger calls found:** 162 (full list in `inventory/'+REPO+'-logs.md`).
 
 ## RepPacketInterim
 
@@ -854,7 +834,7 @@ Priority Replication: send side. Keywords: RepPacketInterim, packetinterim, rout
 - `[REP].[SAVE_V2V_OUT_PACKET_HD]` — `RepPacketInterim/MariApps.PAL.Rep.PacketInterim.DAL/PacketInterimRepository.cs#L89`
 - `[REP].[UPDATE_EXT_PACKET_DATA_BULK]` — `RepPacketInterim/MariApps.PAL.Rep.PacketInterim.DAL/PacketInterimRepository.cs#L142`
 
-**Logger calls found:** 0 (full list in `inventory/ms-rep-logs.md`).
+**Logger calls found:** 13 (full list in `inventory/'+REPO+'-logs.md`).
 
 ## RepProData
 
@@ -885,7 +865,7 @@ Priority Replication: send side. Keywords: RepProData, prodata, routes, stored p
 
 **appsettings sections bound:** `ExternalApiConfig`
 
-**Logger calls found:** 0 (full list in `inventory/ms-rep-logs.md`).
+**Logger calls found:** 32 (full list in `inventory/'+REPO+'-logs.md`).
 
 ## RepQueueManage
 
@@ -904,7 +884,7 @@ Priority Replication: send side. Keywords: RepQueueManage, queuemanage, routes, 
 - `[REP].[PR_REP_GET_CHANNEL_QUEUE_LIMIT]` — `RepQueueManage/MariApps.PAL.Rep.QueueManage.DAL/QueueManageRepository.cs#L41`
 - `[REP].[PR_REP_GET_TOTAL_QUEUE_LIMIT]` — `RepQueueManage/MariApps.PAL.Rep.QueueManage.DAL/QueueManageRepository.cs#L23`
 
-**Logger calls found:** 0 (full list in `inventory/ms-rep-logs.md`).
+**Logger calls found:** 13 (full list in `inventory/'+REPO+'-logs.md`).
 
 ## RepSplit
 
@@ -933,7 +913,7 @@ Priority Replication: send side. Keywords: RepSplit, split, routes, stored proce
 - `PR_REP_ROOT` — `RepSplit/MariApps.PAL.Rep.Split.Service/BL/SplitBL.cs#L36`
 - `PR_REP_SPLIT_SIZE` — `RepSplit/MariApps.PAL.Rep.Split.Service/BL/SplitBL.cs#L54`
 
-**Logger calls found:** 1 (full list in `inventory/ms-rep-logs.md`).
+**Logger calls found:** 51 (full list in `inventory/'+REPO+'-logs.md`).
 
 ## RepTrack
 
@@ -969,7 +949,7 @@ Priority Replication: send side. Keywords: RepTrack, track, routes, stored proce
 
 - `PR_TRACKCHANGE_RECORDS_ID` — `RepTrack/MariApps.PAL.Rep.Track.DAL/TrackRepository.cs#L177`
 
-**Logger calls found:** 0 (full list in `inventory/ms-rep-logs.md`).
+**Logger calls found:** 41 (full list in `inventory/'+REPO+'-logs.md`).
 
 ## RepAckn
 
@@ -991,18 +971,18 @@ Priority Replication: receive side. Keywords: RepAckn, ackn, routes, stored proc
 - `REP.REP_ACKN_EXT_RECORD` — `RepAckn/MariApps.PAL.Rep.Ackn.DAL/AcknRepository.cs#L409`
 - `REP_LOG` — `RepAckn/MariApps.PAL.Rep.Ackn.DAL/AcknRepository.cs#L268`
 - `[REP].[PR_GET_PARAM_DATA]` — `RepAckn/MariApps.PAL.Rep.Ackn.DAL/SqlNamedQueries.cs#L27`
-- `[REP].[PR_REP_GET_ALL_SETTINGS]` — `RepAckn/MariApps.PAL.Rep.Ackn.DAL/SqlNamedQueries.cs#L11`
+- `[REP].[PR_REP_GET_ALL_SETTINGS]` — `RepAckn/MariApps.PAL.Rep.Ackn.DAL/AcknRepository.cs#L482`
 - `[REP].[PR_REP_GET_ALL_TABLESETTINGS]` — `RepAckn/MariApps.PAL.Rep.Ackn.DAL/SqlNamedQueries.cs#L10`
-- `[REP].[PR_SAVE_ERROR_LOG]` — `RepAckn/MariApps.PAL.Rep.Ackn.DAL/SqlNamedQueries.cs#L21`
-- `[REP].[PR_TRACKCHANGE_NEW_TYP_V2V]` — `RepAckn/MariApps.PAL.Rep.Ackn.DAL/SqlNamedQueries.cs#L33`
-- `[REP].[PR_TRACKCHANGE_TYP]` — `RepAckn/MariApps.PAL.Rep.Ackn.DAL/SqlNamedQueries.cs#L32`
+- `[REP].[PR_SAVE_ERROR_LOG]` — `RepAckn/MariApps.PAL.Rep.Ackn.DAL/AcknRepository.cs#L265`
+- `[REP].[PR_TRACKCHANGE_NEW_TYP_V2V]` — `RepAckn/MariApps.PAL.Rep.Ackn.DAL/AcknRepository.cs#L456`
+- `[REP].[PR_TRACKCHANGE_TYP]` — `RepAckn/MariApps.PAL.Rep.Ackn.DAL/AcknRepository.cs#L374`
 - `[REP].[READ_COMMON_PARAMS_VALUE]` — `RepAckn/MariApps.PAL.Rep.Ackn.DAL/SqlNamedQueries.cs#L14`
-- `[REP].[REP_ACKN_INSERT_BULK]` — `RepAckn/MariApps.PAL.Rep.Ackn.DAL/SqlNamedQueries.cs#L18`
-- `[REP].[SAVE_TRACK_CHANGE_RECORD]` — `RepAckn/MariApps.PAL.Rep.Ackn.DAL/SqlNamedQueries.cs#L24`
-- `[REP].[SAVE_TRACK_CHANGE_RECORD_V2V]` — `RepAckn/MariApps.PAL.Rep.Ackn.DAL/SqlNamedQueries.cs#L25`
-- `[Rep].[PR_GET_ACKN_SETTINGS]` — `RepAckn/MariApps.PAL.Rep.Ackn.DAL/SqlNamedQueries.cs#L17`
-- `[Rep].[PR_GET_ACKN_SETTINGS_TYP]` — `RepAckn/MariApps.PAL.Rep.Ackn.DAL/SqlNamedQueries.cs#L30`
-- `[Rep].[PR_SAVE_ACKN_DATA_TYP]` — `RepAckn/MariApps.PAL.Rep.Ackn.DAL/SqlNamedQueries.cs#L31`
+- `[REP].[REP_ACKN_INSERT_BULK]` — `RepAckn/MariApps.PAL.Rep.Ackn.DAL/AcknRepository.cs#L104`
+- `[REP].[SAVE_TRACK_CHANGE_RECORD]` — `RepAckn/MariApps.PAL.Rep.Ackn.DAL/AcknRepository.cs#L370`
+- `[REP].[SAVE_TRACK_CHANGE_RECORD_V2V]` — `RepAckn/MariApps.PAL.Rep.Ackn.DAL/AcknRepository.cs#L452`
+- `[Rep].[PR_GET_ACKN_SETTINGS]` — `RepAckn/MariApps.PAL.Rep.Ackn.DAL/AcknRepository.cs#L38`
+- `[Rep].[PR_GET_ACKN_SETTINGS_TYP]` — `RepAckn/MariApps.PAL.Rep.Ackn.DAL/AcknRepository.cs#L42`
+- `[Rep].[PR_SAVE_ACKN_DATA_TYP]` — `RepAckn/MariApps.PAL.Rep.Ackn.DAL/AcknRepository.cs#L108`
 
 **CO_Parameters / parameter keys read:**
 
@@ -1011,16 +991,16 @@ Priority Replication: receive side. Keywords: RepAckn, ackn, routes, stored proc
 
 **appsettings sections bound:** `DataConduitSettings`
 
-**Logger calls found:** 52 (full list in `inventory/ms-rep-logs.md`).
+**Logger calls found:** 114 (full list in `inventory/'+REPO+'-logs.md`).
 
 ## RepAcquisition
 
 Priority Replication: receive side. Keywords: RepAcquisition, acquisition, routes, stored procedures.
 
+**Background loop / timers:** `initialDelayMilliseconds, cancellationToken` (`RepAcquisition/MariApps.PAL.Rep.Acquisition.Service/BL/CommonOperationsBL.cs#L92`)
+
 **Routes** (controller route names):
 
-- `Acquisition-General` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.Service/Controllers/AcquisitionGeneralController.cs#L10`
-- `Batch-Acquisition-Process` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.Service/Controllers/AcquisitionGeneralController.cs#L26`
 - `Acquisition` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.Service/Controllers/AcquisitionController.cs#L15`
 - `FILE` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.Service/Controllers/AcquisitionController.cs#L39`
 - `AcquireExtFiles` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.Service/Controllers/AcquisitionController.cs#L66`
@@ -1031,7 +1011,8 @@ Priority Replication: receive side. Keywords: RepAcquisition, acquisition, route
 - `ReadQueue` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.Service/Controllers/AcquisitionController.cs#L129`
 - `DeleteAllFromQueue` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.Service/Controllers/AcquisitionController.cs#L135`
 - `Version` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.Service/Controllers/AcquisitionController.cs#L142`
-- `Init` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.Service/Controllers/AcquisitionController.cs#L149`
+- `Acquisition-General` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.Service/Controllers/AcquisitionGeneralController.cs#L10`
+- `Batch-Acquisition-Process` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.Service/Controllers/AcquisitionGeneralController.cs#L26`
 
 **Stored procedures / SQL objects referenced:**
 
@@ -1040,8 +1021,8 @@ Priority Replication: receive side. Keywords: RepAcquisition, acquisition, route
 - `REP.GET_V2V_MISSING_PACKET_STATUS` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/SqlNamedQueries.cs#L27`
 - `REP.GET_V2V_PACKET_COUNTER_IMPORT` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/SqlNamedQueries.cs#L26`
 - `REP.PR_GET_PARAM_DATA` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L30`
-- `REP.PR_GET_TRANSFER_DATA` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L199`
-- `REP.PR_GET_VESSEL_CODE` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L165`
+- `REP.PR_GET_TRANSFER_DATA` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L205`
+- `REP.PR_GET_VESSEL_CODE` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L172`
 - `REP.PR_REP_GET_ALL_SETTINGS` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/SqlNamedQueries.cs#L20`
 - `REP.PR_REP_GET_PACKET_COUNTER` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/SqlNamedQueries.cs#L12`
 - `REP.PR_REP_IMPORT_QUEUE_DT_TYP` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/SqlNamedQueries.cs#L8`
@@ -1062,8 +1043,8 @@ Priority Replication: receive side. Keywords: RepAcquisition, acquisition, route
 - `REP.SAVE_PR_REP_IMPORT_QUEUE` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/SqlNamedQueries.cs#L29`
 - `REP.UPDATE_PR_REP_IMPORT_Q` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/SqlNamedQueries.cs#L30`
 - `REP.UPDATE_PR_REP_IMPORT_QUEUE_DT` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/SqlNamedQueries.cs#L31`
-- `REP.rep_GetDOWNLOADS_TABLEID` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L307`
-- `REP_CODE` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L168`
+- `REP.rep_GetDOWNLOADS_TABLEID` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L314`
+- `REP_CODE` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L175`
 - `REP_OFF_ROOT` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.Service/BL/AcquisitionBL.cs#L861`
 - `REP_PR_KEY_MASTER_ID` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L494`
 - `REP_SOURCE_UNIQUE_ID` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L495`
@@ -1071,24 +1052,23 @@ Priority Replication: receive side. Keywords: RepAcquisition, acquisition, route
 - `[REP].[GET_MISSING_PRIORITY_PACKETS]` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L802`
 - `[REP].[GET_V2V_MISSING_PACKET_STATUS]` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L708`
 - `[REP].[GET_V2V_PACKET_COUNTER_IMPORT]` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L651`
-- `[REP].[PR_REP_GET_ALL_SETTINGS]` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L401`
-- `[REP].[PR_REP_GET_PACKET_COUNTER]` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L57`
+- `[REP].[PR_REP_GET_ALL_SETTINGS]` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L406`
+- `[REP].[PR_REP_GET_PACKET_COUNTER]` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L64`
 - `[REP].[PR_REP_SAVE_IMPORT_PACKET_DATA]` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L343`
-- `[REP].[PR_REP_SAVE_IMPORT_PACKET_DATA_BULK]` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L826`
+- `[REP].[PR_REP_SAVE_IMPORT_PACKET_DATA_BULK]` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L833`
 - `[REP].[PR_TRACKCHANGE_NEW_TYP_V2V]` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L777`
 - `[REP].[PR_TRACKCHANGE_TYP]` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L473`
-- `[REP].[PR_UPDATE_VESSEL_SETTINGS]` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L371`
+- `[REP].[PR_UPDATE_VESSEL_SETTINGS]` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L379`
 - `[REP].[REP_GET_CURRENT_VESSEL_TRANSFER]` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L560`
 - `[REP].[REP_GET_PR_CHANNEL_DETAILS]` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L584`
 - `[REP].[SAVE_TRACK_CHANGE_RECORD]` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L469`
 - `[REP].[SAVE_TRACK_CHANGE_RECORD_V2V]` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L773`
 - `[Rep].[PR_REP_V2V_SAVE_PACKET_DETAILS]` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L610`
-- `[Rep].[REP_GET_DOWNLOAD_PACKET_DETAILS]` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L516`
 
 **CO_Parameters / parameter keys read:**
 
 - `PR_REP_ROOT` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.Service/BL/AcquisitionExtBL.cs#L1267`
-- `REP_CODE` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L168`
+- `REP_CODE` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L175`
 - `REP_OFF_ROOT` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.Service/BL/AcquisitionBL.cs#L861`
 - `REP_PR_KEY_MASTER_ID` **(secret: never copy the value)** — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L494`
 - `REP_SOURCE_UNIQUE_ID` — `RepAcquisition/MariApps.PAL.Rep.Acquisition.DAL/AcquisitionRepository.cs#L495`
@@ -1096,11 +1076,13 @@ Priority Replication: receive side. Keywords: RepAcquisition, acquisition, route
 
 **appsettings sections bound:** `BasicSettings`, `DataConduitSettings`
 
-**Logger calls found:** 240 (full list in `inventory/ms-rep-logs.md`).
+**Logger calls found:** 423 (full list in `inventory/'+REPO+'-logs.md`).
 
 ## RepDecompress
 
 Priority Replication: receive side. Keywords: RepDecompress, decompress, routes, stored procedures.
+
+**Background loop / timers:** `delayMs` (`RepDecompress/MariApps.PAL.Rep.Decompress.Service/BL/CommonDecompressOpsBL.cs#L263`), `initialDelayMilliseconds` (`RepDecompress/MariApps.PAL.Rep.Decompress.Service/BL/CommonDecompressOpsBL.cs#L507`)
 
 **Routes** (controller route names):
 
@@ -1116,12 +1098,11 @@ Priority Replication: receive side. Keywords: RepDecompress, decompress, routes,
 - `PR_PARAM` — `RepDecompress/MariApps.PAL.Rep.Decompress.Service/BL/DecompressBL.cs#L718`
 - `PR_REP_ROOT` — `RepDecompress/MariApps.PAL.Rep.Decompress.Service/BL/DecompressBL.cs#L718`
 - `REP.PR_GET_PARAM_DATA` — `RepDecompress/MariApps.PAL.Rep.Decompress.DAL/DecompressRepository.cs#L28`
-- `REP.PR_GET_TRANSFER_DATA` — `RepDecompress/MariApps.PAL.Rep.Decompress.DAL/DecompressRepository.cs#L184`
-- `REP.PR_REP_MISSING_PACKETS_OPERATIONS` — `RepDecompress/MariApps.PAL.Rep.Decompress.DAL/DecompressRepository.cs#L55`
+- `REP.PR_GET_TRANSFER_DATA` — `RepDecompress/MariApps.PAL.Rep.Decompress.DAL/DecompressRepository.cs#L191`
+- `REP.PR_REP_MISSING_PACKETS_OPERATIONS` — `RepDecompress/MariApps.PAL.Rep.Decompress.DAL/DecompressRepository.cs#L63`
 - `REP.PR_REP_SAVE_PACKET_DT_DATA` — `RepDecompress/MariApps.PAL.Rep.Decompress.DAL/DecompressRepository.cs#L84`
 - `REP.PR_REP_UPDATE_PACKET_DATA` — `RepDecompress/MariApps.PAL.Rep.Decompress.DAL/DecompressRepository.cs#L107`
 - `REP_OFF_ROOT` — `RepDecompress/MariApps.PAL.Rep.Decompress.Service/BL/DecompressBL.cs#L406`
-- `REP_ZIP_UTILITY` — `RepDecompress/MariApps.PAL.Rep.Decompress.Service/Controllers/DecompressController.cs#L51`
 - `[REP].[PR_TRACKCHANGE_NEW_TYP_V2V]` — `RepDecompress/MariApps.PAL.Rep.Decompress.DAL/DecompressRepository.cs#L373`
 - `[REP].[PR_TRACKCHANGE_TYP]` — `RepDecompress/MariApps.PAL.Rep.Decompress.DAL/DecompressRepository.cs#L357`
 - `[REP].[SAVE_TRACK_CHANGE_RECORD]` — `RepDecompress/MariApps.PAL.Rep.Decompress.DAL/DecompressRepository.cs#L353`
@@ -1133,13 +1114,14 @@ Priority Replication: receive side. Keywords: RepDecompress, decompress, routes,
 - `PR_PARAM` — `RepDecompress/MariApps.PAL.Rep.Decompress.Service/BL/DecompressBL.cs#L718`
 - `PR_REP_ROOT` — `RepDecompress/MariApps.PAL.Rep.Decompress.Service/BL/DecompressBL.cs#L718`
 - `REP_OFF_ROOT` — `RepDecompress/MariApps.PAL.Rep.Decompress.Service/BL/DecompressBL.cs#L406`
-- `REP_ZIP_UTILITY` — `RepDecompress/MariApps.PAL.Rep.Decompress.Service/Controllers/DecompressController.cs#L51`
 
-**Logger calls found:** 63 (full list in `inventory/ms-rep-logs.md`).
+**Logger calls found:** 128 (full list in `inventory/'+REPO+'-logs.md`).
 
 ## RepFileMerge
 
 Priority Replication: receive side. Keywords: RepFileMerge, filemerge, routes, stored procedures.
+
+**Background loop / timers:** `initialDelayMilliseconds` (`RepFileMerge/MariApps.PAL.Rep.FileMerge.Service/BL/CommonOperation.cs#L117`), `milliSeconds` (`RepFileMerge/MariApps.PAL.Rep.FileMerge.Service/BL/FileMergeBL.cs#L626`)
 
 **Routes** (controller route names):
 
@@ -1151,8 +1133,8 @@ Priority Replication: receive side. Keywords: RepFileMerge, filemerge, routes, s
 
 **Stored procedures / SQL objects referenced:**
 
-- `REP.PR_GET_PARAM_DATA` — `RepFileMerge/MariApps.PAL.Rep.FileMerge.DAL/FileMergeRepository.cs#L26`
-- `REP.PR_GET_TRANSFER_DATA` — `RepFileMerge/MariApps.PAL.Rep.FileMerge.DAL/FileMergeRepository.cs#L101`
+- `REP.PR_GET_PARAM_DATA` — `RepFileMerge/MariApps.PAL.Rep.FileMerge.DAL/FileMergeRepository.cs#L34`
+- `REP.PR_GET_TRANSFER_DATA` — `RepFileMerge/MariApps.PAL.Rep.FileMerge.DAL/FileMergeRepository.cs#L107`
 - `REP.PR_REP_MISSING_PACKETS_OPERATIONS` — `RepFileMerge/MariApps.PAL.Rep.FileMerge.DAL/FileMergeRepository.cs#L59`
 - `REP_OFF_ROOT` — `RepFileMerge/MariApps.PAL.Rep.FileMerge.Service/BL/FileMergeBL.cs#L34`
 
@@ -1162,7 +1144,7 @@ Priority Replication: receive side. Keywords: RepFileMerge, filemerge, routes, s
 
 **appsettings sections bound:** `BasicSettings`
 
-**Logger calls found:** 31 (full list in `inventory/ms-rep-logs.md`).
+**Logger calls found:** 85 (full list in `inventory/'+REPO+'-logs.md`).
 
 ## RepSaveData
 
@@ -1188,5 +1170,5 @@ Priority Replication: receive side. Keywords: RepSaveData, savedata, routes, sto
 - `[REP].[PR_REP_UPDATE_STATUS]` — `RepSaveData/MariApps.PAL.Rep.SaveData.DAL/SaveDataRepository.cs#L163`
 - `[REP].[REP_SAVE_NOTIFICATION_LOG]` — `RepSaveData/MariApps.PAL.Rep.SaveData.DAL/SaveDataRepository.cs#L183`
 
-**Logger calls found:** 0 (full list in `inventory/ms-rep-logs.md`).
+**Logger calls found:** 35 (full list in `inventory/'+REPO+'-logs.md`).
 

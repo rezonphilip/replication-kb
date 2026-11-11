@@ -16,6 +16,8 @@ last_verified: 2026-11-11
 
 Priority Replication is driven by a handful of settings tables: which tables replicate (table settings), how work is grouped (channels and flows), which vessels take part (vessel settings), and how packets leave (delivery method and transfer master). Most "export exits early" and "transfer type not found" problems are a missing or wrong row in one of these.
 
+> **V2V (vessel-to-vessel) is a dropped feature.** The V2V routes, procedures and message types mentioned in this article still exist in the code and database but are not in use; do not troubleshoot them. See DATA-MSREP-OFFVSL.
+
 ## Table settings — what replicates
 
 `REP.REP_PRIORITY_TABLE_SETTINGS` has one row per replicated table or file type, with separate export/import queries for office and vessel and the destination URLs. Keywords: table settings, TableSettingsId, export query, import query, OFF_BASE_URL, VSL_API_URL.
@@ -29,10 +31,10 @@ Priority Replication is driven by a handful of settings tables: which tables rep
 Channels group table settings; flow rows define the service-to-service order per channel; queue settings cap how many items a channel exports. Keywords: channel, PR_CHANNEL_SETTINGS, channel flow, PR_PRIORITY_CHANNEL_FLOW_SETTINGS, queue count, GENERAL_PACKET.
 
 - `REP.PR_CHANNEL_SETTINGS`: `CHANNEL_NAME`, `START_INTERVAL`, `QUEUE_COUNT`, `RETRY_LIMIT`, `IS_SINGLE`, `IS_PARALLEL`, `PRIORITY`, `CHANNEL_TYPE`, `LAST_EXPORT_TIME`, `LAST_IMPORT_TIME` (`RepIntegration/PAL.DatabaseScripts.Office/Scripts/027_TABLE_PR_CHANNEL_SETTINGS.sql#L4-L19`).
-- Seeded channel names: `CHANNEL_RECORD`, `CHANNEL_FILE`, `TRANSFER_CHANNEL_FILE`, `TRANSFER_CHANNEL_FILE_V2V`, `CHAT_MESSAGE_CHANNEL`, `GENERAL_NOTIFICATION`, `GENERAL_PACKET` (`RepIntegration/PAL.DatabaseScripts.Office/Scripts/041_VALUE_PR_CHANNEL_SETTINGS.sql`). IDs come from a sequence, so they can differ between databases — always look channels up by name. In the Vessel copy of this script the `CHANNEL_RECORD` insert is commented out (`RepIntegration/PAL.DatabaseScripts.Vessel/Scripts/041_VALUE_PR_CHANNEL_SETTINGS.sql`).
+- Seeded channel names: `CHANNEL_RECORD`, `CHANNEL_FILE`, `TRANSFER_CHANNEL_FILE`, `TRANSFER_CHANNEL_FILE_V2V`, `CHAT_MESSAGE_CHANNEL`, `GENERAL_NOTIFICATION`, `GENERAL_PACKET` (`RepIntegration/PAL.DatabaseScripts.Office/Scripts/041_VALUE_PR_CHANNEL_SETTINGS.sql`). IDs come from a sequence, so they can differ between databases — always look channels up by name. In the Vessel copy of this script **all** channel inserts are commented out; the vessel's `001_default_keys.sql` creates only `CHANNEL_RECORD`, `CHANNEL_FILE`, `TRANSFER_CHANNEL_FILE` and `TRANSFER_CHANNEL_FILE_V2V` (V2V, dropped) (`RepIntegration/PAL.DatabaseScripts.Vessel/Scripts/041_VALUE_PR_CHANNEL_SETTINGS.sql`, DATA-MSREP-OFFVSL).
 - RepIntegration's export stops with `General Packet channel information not found. Exiting.` when the `GENERAL_PACKET` channel is missing, and the import with `General Notification Channel not found` when `GENERAL_NOTIFICATION` is missing (ISS-INTEG-002, FLW-PR-IMPORT).
 - `REP.PR_PRIORITY_CHANNEL_FLOW_SETTINGS`: per channel, `FROM_SUB_ID` → `TO_SUB_ID` with `IS_EXPORT` and `ORDER`; read by `REP.PR_REP_GET_CHANNEL_FLOW_SETTINGS @IS_EXPORT` (`RepIntegration/PAL.DatabaseScripts.Office/StoredProcedures/015_PR_REP_GET_CHANNEL_FLOW_SETTINGS.sql#L4-L11`). No rows → `No channel flow settings found for export. Exiting.`
-- `REP.PR_PRIORITY_QUEUE_SETTINGS`: `PR_CHANNEL_SETTINGS_ID`, `IS_SINGLE`, `QUEUE_COUNT`; seeded only for channel IDs 1 and 2 with `QUEUE_COUNT` 500 (`RepIntegration/PAL.DatabaseScripts.Office/Scripts/043_VALUES_PR_PRIORITY_QUEUE_SETTINGS.sql#L1-L8`).
+- `REP.PR_PRIORITY_QUEUE_SETTINGS`: `PR_CHANNEL_SETTINGS_ID`, `IS_SINGLE`, `QUEUE_COUNT`; seeded only for channel IDs 1 and 2 with `QUEUE_COUNT` 500 on the Office (`RepIntegration/PAL.DatabaseScripts.Office/Scripts/043_VALUES_PR_PRIORITY_QUEUE_SETTINGS.sql#L1-L8`); not seeded at all on the Vessel (script commented out).
 - Total queue limit: CO_Parameters `PR_QUEUE_TOTAL_LIMIT` (`RepIntegration/PAL.DatabaseScripts.Office/StoredProcedures/022_PR_REP_GET_TOTAL_QUEUE_LIMIT.sql#L6`); per-channel limit: `PR_CHANNEL_SETTINGS.QUEUE_COUNT` (`RepIntegration/PAL.DatabaseScripts.Office/StoredProcedures/023_PR_REP_GET_CHANNEL_QUEUE_LIMIT.sql#L6-L8`). Both are read by RepQueueManage.
 
 > Observation for review (Q16): `REP.PR_REP_READ_PENDING_EXPORT` joins pending records to `PR_PRIORITY_QUEUE_SETTINGS` on the channel ID (`RepIntegration/PAL.DatabaseScripts.Office/StoredProcedures/138_PR_REP_READ_PENDING_EXPORT.sql#L81`). A channel without a queue-settings row would have its records marked `WTG` but never returned, and they would be reset to `PND` every hour by `PR_REP_TRACK_EXCEED_CHECK`. It also takes only the first 500 pending records ordered by channel ID (`#L44-L58`). Whether either matters in practice needs confirming against a live database.
@@ -57,16 +59,16 @@ Per-sender/receiver packet counters for extended (multi-client) communication li
 
 The vessel's delivery method picks a root-folder parameter through `REP.PR_REP_TRANSFER_MASTER`. Keywords: delivery method, transfer type, PR_REP_TRANSFER_MASTER, REP_AZURE_ROOT, REP_OFF_ROOT, REP_REALM_ROOT, TRANSFER_LOCATION_CODE.
 
-| `DELIVERY_ID` | Root parameter (`REP_CODE`) | Seed script |
-|---|---|---|
-| 0 | `REP_OFF_ROOT` | `RepTransfer/PAL.DatabaseScripts.Office/Scripts/020_DATA_[REP].[PR_REP_TRANSFER_MASTER]_1.sql` |
-| 1 | `REP_OFF_ROOT` | `RepTransfer/PAL.DatabaseScripts.Office/Scripts/021_DATA_[REP].[PR_REP_TRANSFER_MASTER]_2.sql` |
-| 2 | `REP_AZURE_ROOT` (SmartSync) | `RepTransfer/PAL.DatabaseScripts.Office/Scripts/022_DATA_[REP].[PR_REP_TRANSFER_MASTER]_3.sql` |
-| 3 | `REP_REALM_ROOT` | `RepTransfer/PAL.DatabaseScripts.Office/Scripts/023_DATA_[REP].[PR_REP_TRANSFER_MASTER]_4.sql` |
+| `DELIVERY_ID` | Office root parameter (`REP_CODE`) | Vessel root parameter | Seed scripts |
+|---|---|---|---|
+| 0 | `REP_OFF_ROOT` | `PR_REP_ROOT` | `RepTransfer/PAL.DatabaseScripts.Office/Scripts/020_DATA_[REP].[PR_REP_TRANSFER_MASTER]_1.sql`, `RepTransfer/PAL.DatabaseScripts.Vessel/Scripts/005_DATA_[REP].[PR_REP_TRANSFER_MASTER]_1.sql` |
+| 1 | `REP_OFF_ROOT` | `PR_REP_ROOT` | `RepTransfer/PAL.DatabaseScripts.Office/Scripts/021_DATA_[REP].[PR_REP_TRANSFER_MASTER]_2.sql`, `RepTransfer/PAL.DatabaseScripts.Vessel/Scripts/006_DATA_[REP].[PR_REP_TRANSFER_MASTER]_2.sql` |
+| 2 | `REP_AZURE_ROOT` (SmartSync) | `REP_AZURE_ROOT` | `RepTransfer/PAL.DatabaseScripts.Office/Scripts/022_DATA_[REP].[PR_REP_TRANSFER_MASTER]_3.sql` |
+| 3 | `REP_REALM_ROOT` — **not in use** (confirmed by the team) | same | `RepTransfer/PAL.DatabaseScripts.Office/Scripts/023_DATA_[REP].[PR_REP_TRANSFER_MASTER]_4.sql` |
 
-- `REP.PR_GET_TRANSFER_DATA` operation `TRANSFER_LOCATION_CODE` looks up `REP_CODE` for the delivery ID and returns `Common.CO_Parameters.VALUE` where `NAME LIKE '%' + REP_CODE + '%'` (`RepTransfer/PAL.DatabaseScripts.Office/StoredProcedures/002_SP_[Rep].[PR_GET_TRANSFER_DATA].sql#L24-L28`). RepTransfer keeps the **last** row returned (`RepTransfer/MariApps.PAL.Rep.Transfer.DAL/TransferRepository.cs`, `GetTransferLocation`). If more than one parameter name contains the code, the folder used depends on row order — a possible cause of files going to an unexpected folder (open question Q17).
+- `REP.PR_GET_TRANSFER_DATA` operation `TRANSFER_LOCATION_CODE` looks up `REP_CODE` for the delivery ID and returns `Common.CO_Parameters.VALUE` where `NAME LIKE '%' + REP_CODE + '%'` (`RepTransfer/PAL.DatabaseScripts.Office/StoredProcedures/002_SP_[Rep].[PR_GET_TRANSFER_DATA].sql#L24-L28`). RepTransfer keeps the last row returned (`RepTransfer/MariApps.PAL.Rep.Transfer.DAL/TransferRepository.cs`, `GetTransferLocation`). The name match is loose on purpose; only one parameter carries each name, so this is not a troubleshooting concern (confirmed by the team, Q17 closed). What matters is that the parameter exists and holds the right folder — on the office `REP_OFF_ROOT`, on the vessel `PR_REP_ROOT` for methods 0/1 (DATA-MSREP-OFFVSL).
 - Operation `TRANSFER_TYPE` returns the vessel's `DELIVERY_METHOD` from `REP.REP_VESSEL_INFRA`; vessel ID `-999` always returns `2` (`RepTransfer/PAL.DatabaseScripts.Office/StoredProcedures/002_SP_[Rep].[PR_GET_TRANSFER_DATA].sql#L11-L19`).
-- RepTransfer's `MoveFile` handles delivery methods 0, 1 and 2 only (`RepTransfer/MariApps.PAL.Rep.Transfer.Service/BL/TransferBL.cs#L71-L140`); how method 3 (`REP_REALM_ROOT`) is handled: Not determined from code.
+- RepTransfer's `MoveFile` handles delivery methods 0, 1 and 2 (`RepTransfer/MariApps.PAL.Rep.Transfer.Service/BL/TransferBL.cs#L71-L140`). Method 3 (`REP_REALM_ROOT`) has no branch because it is not in use (Q19 closed).
 - `REP.REP_TYPE_TRANSFER_MEDIUM` also stores a `DELIVERY_METHOD` and `COMPRESSION_TYPE` per vessel and replication type (`RepIntegration/PAL.DatabaseScripts.Office/Scripts/096_rep_type_transfer_medium.sql`); how it relates to `REP_VESSEL_INFRA`: Not determined from code.
 
 ## Service IDs used in queue rows

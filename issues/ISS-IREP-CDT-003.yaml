@@ -1,0 +1,110 @@
+id: ISS-IREP-CDT-003
+title: 'sync+ export: CDT version check / procedure signature mismatch'
+status: draft
+author: claude
+reviewed_by: ''
+last_verified: '2026-11-11'
+mechanism:
+- irep
+runs_on:
+- office
+- vessel
+components:
+- ExportCDT
+error_types:
+- db
+- dataapply
+related_docs:
+- CMP-EXPORTCDT
+- DATA-IREP
+symptoms:
+- CDT cycle stops after reading data with "CheckCdtVersion failed" or "UpdateCdtVersion failed".
+- SQL text "Must declare the scalar variable" or "has too many arguments" — the procedure on the database is a different version from the service.
+- Often directly after a service upgrade without the matching database scripts (or the reverse).
+phrasings:
+- CheckCdtVersion failed
+- cdt version validation failed
+- must declare the scalar variable
+- '@STATUS error'
+- '@MAXID error'
+- procedure has too many arguments
+- sp mismatch after upgrade
+- irep upgrade db scripts not run
+- cdt version not updated
+- UpdateCdtVersion failed
+- currentcdtversion not fetched
+- secondary db lagging
+- read only replica latency
+- cdt version mismatch primary secondary
+- sync+ stuck after upgrade
+- export cdt stops after reading
+- chek cdt version fail
+- availability group replica behind
+- replica lag cdt
+- version check retries failing
+signatures:
+- log_file: CDTServiceLog_.txt
+  regex: Must declare the scalar variable "@(?<variable>\w+)"
+  source: ExportCDT/Mariapps.PAL.RepExportCDT/Logs/Export_CDT_20240415.txt#L42
+  level: Error
+  visible_by_default: true
+  confidence: high
+  note: SQL Server message text seen in a real 2024 CDT log; it follows the code template in the same line.
+- log_file: CDTServiceLog_.txt
+  regex: 'CheckCdtVersion\ validation\ failed,\ ReplicaTypeId:'
+  source: ExportCDT/Mariapps.PAL.RepExportCDT/BL/DBConnectionAggregator.cs#L220
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: CDTServiceLog_.txt
+  regex: 'CheckCdtVersion\ failed,\ ReplicaTypeId:.*?,\ ErrorMessage:'
+  source: ExportCDT/Mariapps.PAL.RepExportCDT/BL/DBConnectionAggregator.cs#L225
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: CDTServiceLog_.txt
+  regex: failed\ to\ fetch\ currentcdtversion,\ ReplicaTypeId:.*?,\ response\ is\ null
+  source: ExportCDT/Mariapps.PAL.RepExportCDT/BL/DBConnectionAggregator.cs#L285
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: CDTServiceLog_.txt
+  regex: UpdateCdtVersion\ failed,\ ReplicaTypeId:.*?,\ TableId:.*?,\ CDTVersion:.*?,\ ErrorMessage:.*?\.\ The\ next\ cycle\ will\ re\-export\ changes\ for\ this\ table\ from\ the\ previous\ CDT\ version\.
+  source: ExportCDT/Mariapps.PAL.RepExportCDT/BL/DBConnectionAggregator.cs#L309
+  level: Error
+  visible_by_default: true
+  confidence: high
+distinguishing_checks:
+- check: Is the SQL text a parameter/procedure error ("Must declare", "too many arguments", "could not find stored procedure")?
+  if_true: yes -> service and database script versions differ
+  if_false: no -> check primary-to-secondary latency (read-only replica behind the primary)
+- check: Compare the procedure definitions on the database with inventory/irep-db.md for the deployed version.
+  if_true: different -> apply the scripts of the deployed version
+  if_false: same -> latency/availability-group issue; DBA checks replica sync
+solutions:
+- id: SOL-IREP-CDT-003-A
+  title: Align database scripts with the service version
+  when: Procedure signature mismatch.
+  steps:
+  - do: Identify deployed service version and database script version.
+    who: dev
+    requires_approval: false
+    verify: Versions known.
+  - do: Run the missing iRep database scripts (iRepScript) for the version.
+    who: dev
+    requires_approval: true
+    verify: CheckCdtVersion passes on the next cycle.
+  escalate_if: The failure repeats after the fix, or the cause is not covered by the checks above.
+- id: SOL-IREP-CDT-003-B
+  title: Wait for or fix replica latency
+  when: Version check fails because the read-only secondary lags the primary.
+  steps:
+  - do: DBA checks availability-group synchronisation state and redo queue.
+    who: dev
+    requires_approval: false
+    verify: Lag measured.
+  - do: Resolve the lag (DBA); the service retries 3 times per cycle with 2 s gaps.
+    who: dev
+    requires_approval: true
+    verify: Next cycle passes the version check.
+  escalate_if: The failure repeats after the fix, or the cause is not covered by the checks above.

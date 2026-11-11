@@ -1,7 +1,7 @@
 # Allowed label values for front-matter and issue cards. Add here before using a new value.
 type: [overview, inventory, component, flow, config, issue, script, reference]
-mechanism: [smartsync, priority-replication, irep, task-scheduler]
-group: [smartsync-transport, transfer-adapter, orchestrator, pr-core, pr-send, pr-receive, data]
+mechanism: [smartsync, priority-replication, irep, task-scheduler]  # irep = SmartSync+ (sync+); smartsync = SmartSync (sync) transport
+group: [smartsync-transport, transfer-adapter, orchestrator, pr-core, pr-send, pr-receive, data, irep-config, irep-export, irep-import, irep-inspection]
 runs_on: [office, vessel]
-direction: [office-to-vessel, vessel-to-office, vessel-to-vessel, both]
+direction: [office-to-vessel, vessel-to-office, vessel-to-vessel, both]  # vessel-to-vessel (V2V) is a dropped feature — do not tag new content with it
 status: [draft, needs-review, approved]

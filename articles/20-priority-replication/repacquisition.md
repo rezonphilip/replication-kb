@@ -19,6 +19,8 @@ last_verified: 2026-11-11
 
 RepAcquisition is the first receive step: it picks up incoming packet files from the inbox folders, registers them, detects missing packets, handles error files and queues them for import (`Acquisition/FILE`, `AcquireExtFiles`, `Initiate-Acquisition`, `Initiate-Error-File-Handler`, `Batch-Acquisition-Process`). It can start RepIntegration's import queue itself.
 
+> **V2V (vessel-to-vessel) is a dropped feature.** The V2V routes, procedures and message types mentioned in this article still exist in the code and database but are not in use; do not troubleshoot them. See DATA-MSREP-OFFVSL.
+
 ## Role in replication
 
 RepAcquisition is a Priority Replication receive-side step with no timer of its own: it runs only when called over HTTP (no hosted background service found in the project). Keywords: RepAcquisition, acquisition, priority replication, receive side, picks up incoming packet files.

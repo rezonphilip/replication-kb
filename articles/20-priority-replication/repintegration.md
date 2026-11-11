@@ -19,12 +19,14 @@ last_verified: 2026-11-11
 
 RepIntegration is the service that makes Priority Replication happen: its background loop starts export, import, resend, notification and transfer work, and it calls every other MS-REP service in the right order. For iRep it handles only the transfer step. It also hosts diagnostics used by the dashboard (service status, config evaluation, log summary, read-only script execution). If RepIntegration is stopped or its loop is disabled, nothing new replicates even though all other services answer.
 
+> **V2V (vessel-to-vessel) is a dropped feature.** The V2V routes, procedures and message types mentioned in this article still exist in the code and database but are not in use; do not troubleshoot them. See DATA-MSREP-OFFVSL.
+
 ## Role in replication
 
 RepIntegration is the conductor; the other services are instruments it calls over HTTP. Keywords: orchestrator, integration, export, import, resend, queue, iRep transfer, worker.
 
 - Priority Replication: drives the full send chain (ProData → PacketCreation → Compression → Split → Transfer) and receive chain (Acquisition → FileMerge → Decompress → SaveData/Ackn). See FLW-PR-EXPORT and FLW-PR-IMPORT.
-- iRep: only transfer — routes such as `IntegrateTrackRecord`, `IntegrateTrackFile`, `IntegrateTrackExport`, `TransferPacketFolder`; iRep data preparation, ingestion and packet creation happen elsewhere (confirmed by platform team, 2026-11-11).
+- iRep (sync+): only transfer. ExportDCS hands every sync+ packet to `Integration/TransferGeneral` (`RepIntegration/MariApps.PAL.Rep.Integration.Service/Controllers/IntegrationController.cs#L429`, configured in `ExportDCS/Mariapps.PAL.RepExportDCS/services.json`), which passes it to RepTransfer. Other iRep-related routes: `IntegrateTrackRecord`, `IntegrateTrackFile`, `IntegrateTrackExport`, `TransferPacketFolder`. Data preparation, packet creation and import happen in the sync+ services (PLT-IREP, FLW-IREP-EXPORT). If RepIntegration is down, sync+ packets pile up in the outbox and depend on ExportDCS resend (ISS-IREP-DCS-003).
 - Health and diagnostics for all services: `CheckAllServiceStatus` calls `TestService` on every service; `CheckOperationByFile` checks Windows services and Service Bus/Azure access (RepSbus `ReceiverStatus`, `SbusVerifyAccess`; RepAzure `AzureVerifyAccess`).
 
 ## How it runs — the main loop

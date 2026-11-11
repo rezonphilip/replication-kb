@@ -19,6 +19,8 @@ last_verified: 2026-11-11
 
 RepSbus sends and receives SmartSync messages over Azure Service Bus: packet-transfer notices, acknowledgements, service-info and general notifications, for both office↔vessel and vessel↔vessel (V2V). It keeps a queue listener running in the background. If the listener is down, the other side never learns that a packet is waiting, so downloads and acknowledgements stop even though uploads may still succeed.
 
+> **V2V (vessel-to-vessel) is a dropped feature.** The V2V routes, procedures and message types mentioned in this article still exist in the code and database but are not in use; do not troubleshoot them. See DATA-MSREP-OFFVSL.
+
 ## Role in replication
 
 RepSbus is the signalling half of SmartSync: files travel through Azure Blob (RepAzure / RepAzureRes), and RepSbus tells the other end about them. Keywords: service bus, SmartSync, notification, queue, listener, receiver, acknowledgement, V2V.

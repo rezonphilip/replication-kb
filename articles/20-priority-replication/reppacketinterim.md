@@ -19,6 +19,8 @@ last_verified: 2026-11-11
 
 RepPacketInterim keeps interim packet bookkeeping during transfer: it reads the packet counter, writes the packet's JSON description and updates packet status (`ReadPckCounter`, `CreateJsonFile`, `UpdatePacketStatus`, `UpdateExtPacketDataBulk`). It is called by RepIntegration inside the transfer step.
 
+> **V2V (vessel-to-vessel) is a dropped feature.** The V2V routes, procedures and message types mentioned in this article still exist in the code and database but are not in use; do not troubleshoot them. See DATA-MSREP-OFFVSL.
+
 ## Role in replication
 
 RepPacketInterim is a Priority Replication send-side step with no timer of its own: it runs only when called over HTTP (no hosted background service found in the project). Keywords: RepPacketInterim, packetinterim, priority replication, send side, records packet counters and JSON.

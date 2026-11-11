@@ -19,6 +19,8 @@ last_verified: 2026-11-11
 
 RepTrack stores and updates track-change records — the list of changes waiting to be exported — and their status per vessel (`SaveTrackChangeRecord`, `SaveTrackChangeFile`, `UpdateTrackStatus`, `UpdateTrackVesselStatus`, `UpdateTrackUniqueIdStatus`). The queue-based export in RepIntegration starts from these records.
 
+> **V2V (vessel-to-vessel) is a dropped feature.** The V2V routes, procedures and message types mentioned in this article still exist in the code and database but are not in use; do not troubleshoot them. See DATA-MSREP-OFFVSL.
+
 ## Role in replication
 
 RepTrack is a Priority Replication send-side step with no timer of its own: it runs only when called over HTTP (no hosted background service found in the project). Keywords: RepTrack, track, priority replication, send side, tracks change records and status.

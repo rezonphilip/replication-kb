@@ -1,5 +1,28 @@
 # Canonical names extracted from MS-REP (snapshot 2026-11-11). Names only, never values.
+# V2V (vessel-to-vessel) identifiers below belong to a dropped feature; they are kept so log lines can still be recognised.
 services:
+  # --- iRep / SmartSync+ (sync+) services (snapshot 2026-11-11) ---
+  ComINT:
+    doc_id: CMP-COMINT
+    log_file: ComINTServiceLog_.txt
+  ExportCDT:
+    doc_id: CMP-EXPORTCDT
+    log_file: CDTServiceLog_.txt
+  ExportDCS:
+    doc_id: CMP-EXPORTDCS
+    log_file: DcsServicePalLog_.txt
+  ImportDES:
+    doc_id: CMP-IMPORTDES
+    log_file: DesServiceLog_.txt
+  ImportDSC:
+    doc_id: CMP-IMPORTDSC
+    log_file: DscServiceLog_.txt
+  ImportRBP:
+    doc_id: CMP-IMPORTRBP
+    log_file: RbpServiceLog_.txt
+  ComPBR:
+    doc_id: CMP-COMPBR
+    log_file: PbrServiceLog_.txt
   RepAckn:
     doc_id: CMP-REPACKN
     log_file: AcknLog_.txt
@@ -950,3 +973,8 @@ db_procedures_in_scripts:
 - REP.UPDATE_TRACK_CHANGE_STATUS
 - REP.UPD_TRACK_RECORD_STATUS
 - REP.V2V_RESEND_LOG_OPERATIONS
+
+# iRep replica types (ComINT ConnectionStringSettings)
+irep_replica_types: {1: NORMAL, 2: ATTACHMENTS, 3: PAL_REP, 4: REP2X, 5: REP2I}
+# iRep databases: PAL (application), REP2X (export staging), REP2I (import staging); "AzureDB" in code = REP2X/REP2I SQL database
+irep_databases: [PAL, PAL_REP, REP2X, REP2I]

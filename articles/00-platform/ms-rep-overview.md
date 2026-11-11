@@ -13,7 +13,7 @@ last_verified: 2026-11-11
 
 # MS-REP — what the 19 services are and how they fit together
 
-MS-REP is the replication service suite installed on both the office and every vessel. Its transport part is called **SmartSync** (Service Bus + Azure Blob); the rest of the suite implements **Priority Replication**, and RepIntegration also drives the transfer step for **iRep**. When something "is not replicating", the first question is always *which group* has stopped: transport, adapter, orchestrator, or one of the Priority Replication steps.
+MS-REP is the replication service suite installed on both the office and every vessel. Its transport part is called **SmartSync** (Service Bus + Azure Blob); the rest of the suite implements **Priority Replication**, and RepIntegration also drives the transfer step for **iRep**. The iRep (SmartSync+, sync+) services are a separate suite documented in PLT-IREP; they use SmartSync for transport through RepIntegration `TransferGeneral`. When something "is not replicating", the first question is always *which group* has stopped: transport, adapter, orchestrator, or one of the Priority Replication steps.
 
 ## Same code on office and vessel
 

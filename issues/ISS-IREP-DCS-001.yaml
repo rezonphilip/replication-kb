@@ -1,0 +1,102 @@
+id: ISS-IREP-DCS-001
+title: 'sync+ export: DCS export start skipped (config status false, DCS busy or export queue running)'
+status: draft
+author: claude
+reviewed_by: ''
+last_verified: '2026-11-11'
+mechanism:
+- irep
+runs_on:
+- office
+- vessel
+components:
+- ExportDCS
+- ImportDES
+error_types:
+- stuck
+- config
+related_docs:
+- CMP-EXPORTDCS
+- FLW-IREP-EXPORT
+symptoms:
+- ExportCDT completes but no packets are created.
+- ExportDCS warns "Export process start skipped" or logs "Config Status is false, ReInitialize the Service startup config".
+- Logs "Awaiter status is failed, exiting process" or "Export Queue or resend Queue already running".
+phrasings:
+- export process start skipped
+- config status is false
+- reinitialize service startup config
+- dcs not creating packets
+- no packets generated irep
+- awaiter status failed
+- export queue already running
+- resend queue already running
+- dcs skipped export
+- packet creation not starting
+- dcs busy
+- export dcs idle
+- InitateExportProcess does nothing
+- sync+ export paused
+- process meta info in memory
+- dcs startup config failed
+- export start skiped
+- irep export stuck after cdt
+- des config status false
+- import config not initialised
+signatures:
+- log_file: DcsServicePalLog_.txt
+  regex: \|Export\ process\ start\ skipped\.
+  source: ExportDCS/Mariapps.PAL.RepExportDCS/BL/Main/Common/CommonProcessBL.cs#L434
+  level: Warning
+  visible_by_default: false
+  confidence: high
+- log_file: DcsServicePalLog_.txt
+  regex: \|Config\ Status\ is\ false,\ ReInitialize\ the\ Service\ startup\ config
+  source: ExportDCS/Mariapps.PAL.RepExportDCS/BL/DataConduitMethods/ExportDataConduitBL.cs#L738
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DcsServicePalLog_.txt
+  regex: \|\ Export\ Queue\ or\ resend\ Queue\ already\ running\ so\ not\ changing\ cache\ data
+  source: ExportDCS/Mariapps.PAL.RepExportDCS/BL/Main/Common/CommonProcessBL.cs#L328
+  level: Warning
+  visible_by_default: false
+  confidence: high
+- log_file: DcsServicePalLog_.txt
+  regex: Awaiter\ status\ is\ failed,\ exiting\ process
+  source: ExportDCS/Mariapps.PAL.RepExportDCS/BL/Main/ExportBL.cs#L115
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: \|Config\ Status\ is\ false,\ ReInitialize\ the\ Service\ startup\ config
+  source: ImportDES/Mariapps.PAL.RepImportDES/BL/DataConduitMethods/ImportDesDataConduitBL.cs#L665
+  level: Error
+  visible_by_default: true
+  confidence: high
+distinguishing_checks:
+- check: 'Read the three parts of "Export process start skipped": DCS message, config message, export message.'
+  if_true: config part false -> startup configuration failed to load; check the CONFIG lines just before
+  if_false: DCS/export part -> a previous run or resend is still marked running
+- check: Is the warning visible at all? Default minimum level is Error.
+  if_true: not visible -> temporarily raise the log level to Warning
+  if_false: visible -> follow the part that blocks
+solutions:
+- id: SOL-IREP-DCS-001-A
+  title: Re-initialise the startup configuration
+  when: Config status false.
+  steps:
+  - do: Fix the configuration error logged before (see ISS-IREP-CFG-001 / ISS-IREXP-CONFIG), then use the service re-initialise/clear-cache route or restart.
+    who: support
+    requires_approval: true
+    verify: Next trigger starts an export.
+  escalate_if: The failure repeats after the fix, or the cause is not covered by the checks above.
+- id: SOL-IREP-DCS-001-B
+  title: Release a stale running state
+  when: Export/resend queue flag or awaiter state remains after a crash.
+  steps:
+  - do: Wait for REP_PROCESS_AWAIT_TIME to pass; if it persists, clear the DCS cache keys through the documented route or restart.
+    who: support
+    requires_approval: true
+    verify: Export starts and packets are created.
+  escalate_if: The failure repeats after the fix, or the cause is not covered by the checks above.

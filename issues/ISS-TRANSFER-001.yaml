@@ -63,6 +63,9 @@ distinguishing_checks:
     script: catalog/scripts/vessel-delivery-method.sql
     if_true: "no row / empty DELIVERY_METHOD → solution A"
     if_false: "method set → folder for that method not configured → solution B"
+  - check: "On a vessel: does CO_Parameters IS_PRODUCT exist and equal N? If not, REP.PR_GET_TRANSFER_DATA reads the delivery method from a database literally named PAL (DATA-MSREP-OFFVSL)."
+    if_true: "lookup uses the deployment's own database → solution A/B"
+    if_false: "lookup uses [PAL]; if the vessel database has another name the transfer type is empty → dev to confirm the intended IS_PRODUCT value (approval required)"
 
 solutions:
   - id: SOL-TRANSFER-001-A
@@ -85,7 +88,7 @@ solutions:
     title: "Configure the base folder for the delivery method"
     when: "Method is set but the folder lookup returns empty."
     steps:
-      - do: "Dev checks REP.PR_REP_TRANSFER_MASTER for the delivery ID (0/1 -> REP_OFF_ROOT, 2 -> REP_AZURE_ROOT, 3 -> REP_REALM_ROOT) and that exactly one CO_Parameters name contains that code with the right folder value."
+      - do: "Dev checks REP.PR_REP_TRANSFER_MASTER for the delivery ID (0/1 -> REP_OFF_ROOT on office, PR_REP_ROOT on vessel; 2 -> REP_AZURE_ROOT; 3 is not in use) and that the matching CO_Parameters row exists with the right folder value."
         who: dev
         requires_approval: true
         verify: "No \"folder is null or empty\" lines in the next cycle."

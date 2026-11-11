@@ -1,0 +1,114 @@
+id: ISS-IREP-DES-002
+title: 'sync+ import: incorrect or missing packet counter — vessel skipped until next cycle'
+status: draft
+author: claude
+reviewed_by: ''
+last_verified: '2026-11-11'
+mechanism:
+- irep
+runs_on:
+- office
+- vessel
+components:
+- ImportDES
+error_types:
+- sequence
+related_docs:
+- CMP-IMPORTDES
+- FLW-IREP-IMPORT
+- DATA-IREP
+symptoms:
+- Import stops for one vessel; later packets wait in the inbox.
+- Warnings "Incorrect packet counter … received for vessel" and "Skipping the vessel … untill next cycle".
+phrasings:
+- incorrect packet counter
+- packet counter mismatch irep
+- missing packet sync+
+- vessel skipped until next cycle
+- later packets waiting
+- packet gap des
+- packet counter updation failed
+- error packet counter cache list
+- no valid packet counter
+- packet counter 0
+- out of order packet irep
+- missing packet status
+- last in packet counter wrong
+- import stuck one vessel
+- sequnce error import
+- resend missing packet irep
+- packet counter clear failed
+- skipped vessel des
+- counter not continuous
+- packet lost in transit
+signatures:
+- log_file: DesServiceLog_.txt
+  regex: \|Incorrect\ packet\ counter.*?received\ for\ vessel.*?and\ packet.*?\|Last\ cache\ packet\ number
+  source: ImportDES/Mariapps.PAL.RepImportDES/BL/Validate/ImportValidateBL.cs#L295
+  level: Warning
+  visible_by_default: false
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: '\|Incorrect\ packet\ counter.*?for\ vessel.*?,\ cache\ list\ push\ status:'
+  source: ImportDES/Mariapps.PAL.RepImportDES/BL/Validate/ImportValidateBL.cs#L326
+  level: Warning
+  visible_by_default: false
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: \|\ Skipping\ the\ vessel\ ObjectID.*?from\ processing\ untill\ next\ cycle
+  source: ImportDES/Mariapps.PAL.RepImportDES/BL/Validate/ImportValidateBL.cs#L328
+  level: Warning
+  visible_by_default: false
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: \|\ Error\ while\ reading\ validating\ packetCounter\|Skipping
+  source: ImportDES/Mariapps.PAL.RepImportDES/BL/Validate/ImportValidateBL.cs#L340
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: \|\ Packet\ counter\ updation\ failed\ for\ vessel.*?and\ PacketCounter.*?for\ key
+  source: ImportDES/Mariapps.PAL.RepImportDES/BL/Validate/ImportValidateBL.cs#L542
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: \|No\ valid\ PacketCounter\ found\ for\ packet
+  source: ImportDES/Mariapps.PAL.RepImportDES/BL/Validate/ImportValidateBL.cs#L599
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: \|\ Error\ packet\ counter\ clear\ failed\ for\ vessel
+  source: ImportDES/Mariapps.PAL.RepImportDES/BL/Validate/ImportValidateBL.cs#L499
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: \|\ Error\ in\ pushing\ error\ packet\ counter\ to\ cache\ list\ for\ vessel.*?and\ PacketName
+  source: ImportDES/Mariapps.PAL.RepImportDES/BL/Validate/ImportValidateBL.cs#L313
+  level: Error
+  visible_by_default: true
+  confidence: high
+distinguishing_checks:
+- check: Compare the last applied in-packet counter for the vessel with the counters waiting in the inbox (read-only).
+  if_true: gap -> the missing counter must be resent
+  if_false: no gap -> counter update failed in DB; see IRIMP-DB
+- check: Is the missing packet in the error folder or skip table?
+  if_true: yes -> fix that packet (ISS-IREP-DES-001/003)
+  if_false: no -> request resend from the sender (sender auto resend may be exhausted)
+solutions:
+- id: SOL-IREP-DES-002-A
+  title: Get the missing counter re-sent
+  when: Packet never arrived or was rejected.
+  steps:
+  - do: Identify vessel and first missing counter.
+    who: support
+    requires_approval: false
+    verify: Counter known.
+  - do: Trigger resend on the sending ExportDCS (resend route / auto resend log).
+    who: dev
+    requires_approval: true
+    verify: Missing packet arrives; later packets import.
+  escalate_if: The failure repeats after the fix, or the cause is not covered by the checks above.
+notes: Warnings are hidden at the default Error level.

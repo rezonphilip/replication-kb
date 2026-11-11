@@ -1,0 +1,121 @@
+id: ISS-IREP-DCS-002
+title: 'sync+: vessel configuration invalid — vessel added to failed/skip list'
+status: draft
+author: claude
+reviewed_by: ''
+last_verified: '2026-11-11'
+mechanism:
+- irep
+runs_on:
+- office
+- vessel
+components:
+- ExportDCS
+- ImportDES
+error_types:
+- config
+related_docs:
+- CMP-EXPORTDCS
+- CMP-IMPORTDES
+- CFG-IREP
+symptoms:
+- One vessel never gets packets (export) or its packets are never validated (import) while others work.
+- Logs "Config Status is false for Vessel … adding it to failed Vessel", "basic configuration does not exist skipping", or path configuration errors for the vessel.
+- Typical after onboarding a new vessel or changing its folder paths.
+phrasings:
+- vessel config path invalid
+- vessel added to failed list
+- vessel skip list
+- one vessel not replicating sync+
+- new vessel not getting packets
+- vessel basic configuration does not exist
+- error while path configuration for vessel
+- vessel config info error
+- no vessel config path data
+- environment default config paths not found
+- vessel skipped every cycle
+- irep new ship setup
+- vesel config missing
+- outbox path wrong for vessel
+- inbox path wrong for vessel
+- vessel folder not configured
+- only one ship failing irep
+- import skipped for vessel
+- export skipped for vessel
+- invalid config vessel skip list
+signatures:
+- log_file: DcsServicePalLog_.txt
+  regex: \|Export\ Config\ Status\ is\ false\ for\ Vessel.*?\|\ adding\ it\ to\ failed\ Vessel\ List
+  source: ExportDCS/Mariapps.PAL.RepExportDCS/BL/DataConduitMethods/ExportDataConduitBL.cs#L928
+  level: Warning
+  visible_by_default: false
+  confidence: high
+- log_file: DcsServicePalLog_.txt
+  regex: Error\ in.*?while\ validating\ for\ Vessel
+  source: ExportDCS/Mariapps.PAL.RepExportDCS/BL/DataConduitMethods/ExportDataConduitBL.cs#L947
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DcsServicePalLog_.txt
+  regex: \|Error\ while\ path\ configuration\ for\ Vessel
+  source: ExportDCS/Mariapps.PAL.RepExportDCS/BL/Main/ExportBL.cs#L157
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DcsServicePalLog_.txt
+  regex: \|Error\ getting\ Vessel\ Config\ Info\ for\ Vessel
+  source: ExportDCS/Mariapps.PAL.RepExportDCS/BL/Main/ExportBL.cs#L267
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DcsServicePalLog_.txt
+  regex: \|No\ Vessel\ Config\ Path\ data\ found
+  source: ExportDCS/Mariapps.PAL.RepExportDCS/BL/DataConduitMethods/ExportDataConduitBL.cs#L242
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DcsServicePalLog_.txt
+  regex: \|Environment\ default\ config\ paths\ not\ found
+  source: ExportDCS/Mariapps.PAL.RepExportDCS/BL/DataConduitMethods/ExportDataConduitBL.cs#L207
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: \|Import\ Config\ Status\ is\ false\ for\ Vessel.*?\|\ adding\ it\ to\ failed\ Vessel\ List
+  source: ImportDES/Mariapps.PAL.RepImportDES/BL/DataConduitMethods/ImportDesDataConduitBL.cs#L1249
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: \|\ Vessel.*?basic\ configuration\ does\ not\ exist\ skipping
+  source: ImportDES/Mariapps.PAL.RepImportDES/BL/Validate/ImportValidateBL.cs#L172
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: \|Error\ while\ setting\ invalid\ config\ vessel.*?to\ skip\ list
+  source: ImportDES/Mariapps.PAL.RepImportDES/BL/Validate/ImportValidateBL.cs#L333
+  level: Error
+  visible_by_default: true
+  confidence: high
+distinguishing_checks:
+- check: 'Run the read-only vessel configuration presence check for the vessel (paths and basic configuration rows: PRESENT/EMPTY/MISSING).'
+  if_true: missing/empty -> complete the vessel setup
+  if_false: present -> check the folders exist and the service account can write
+- check: Does the failure clear after the service reset interval or restart?
+  if_true: yes, then returns -> configuration really invalid
+  if_false: stays cleared -> transient (folder briefly unavailable)
+solutions:
+- id: SOL-IREP-DCS-002-A
+  title: Complete vessel configuration
+  when: Vessel rows or paths missing.
+  steps:
+  - do: Dev/ops adds the missing vessel configuration rows/paths via the onboarding procedure.
+    who: dev
+    requires_approval: true
+    verify: Presence check shows PRESENT.
+  - do: Clear the skip/failed list by cache clear or restart.
+    who: support
+    requires_approval: true
+    verify: Vessel processed in the next cycle.
+  escalate_if: The failure repeats after the fix, or the cause is not covered by the checks above.

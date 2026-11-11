@@ -1,0 +1,20 @@
+meta:
+  doc_id: INV-IREP
+  title: iRep (SmartSync+)
+  mechanism: "[irep, smartsync]"
+  notes: |
+    - **iRep** is called **SmartSync+ (sync+)** internally. It replicates whole tables per *replica type* (1 NORMAL, 2 ATTACHMENTS, 3 PAL_REP, 4 REP2X, 5 REP2I) using SQL Server change tracking on the sending side and staging databases (REP2X on export, REP2I on import).
+    - **ComINT** is the configuration gateway: every other iRep service asks it (`ComINT/GetDbConfigurationDetails`) for the per-replica-type connection settings.
+    - **Export side:** ExportCDT (change tracking → REP2X record-sync tables) → ExportDCS (packet generation per vessel) → RepIntegration `Integration/TransferGeneral` → RepTransfer → SmartSync (RepAzure/RepSbus).
+    - **Import side:** ImportDES (validate and read incoming packets into REP2I) → ImportDSC (schema compare / replica table create-alter) → ImportRBP (apply staged rows to PAL tables and call application endpoints).
+    - **ComPBR** reads packet headers/queues and zip packet content for reporting and manual inspection.
+    - The transport (SmartSync) and the RepIntegration/RepTransfer hand-off are documented in `inventory/ms-rep.md`.
+order: ["Configuration gateway", "Export side (sync+)", "Import side (sync+)", "Reporting / inspection (sync+)"]
+groups:
+  ComINT: Configuration gateway
+  ExportCDT: Export side (sync+)
+  ExportDCS: Export side (sync+)
+  ImportDES: Import side (sync+)
+  ImportDSC: Import side (sync+)
+  ImportRBP: Import side (sync+)
+  ComPBR: Reporting / inspection (sync+)

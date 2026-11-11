@@ -16,6 +16,8 @@ last_verified: 2026-11-11
 
 This flow takes changed records on one side (office or vessel), packs them into numbered packets, moves them to the vessel's delivery location and — for Azure delivery — uploads them and notifies the other side. RepIntegration drives every step. "Done" for the sender means the packet was acknowledged by the receiver; until then it is eligible for resend.
 
+> **V2V (vessel-to-vessel) is a dropped feature.** The V2V routes, procedures and message types mentioned in this article still exist in the code and database but are not in use; do not troubleshoot them. See DATA-MSREP-OFFVSL.
+
 ## Steps at a glance
 
 There are two export paths in the code — the older chained export and the newer queue-based export — and both end in RepTransfer. Keywords: export steps, packet, transfer, upload, notification, chain, queue.
@@ -64,7 +66,7 @@ Packets not acknowledged in time are resent. Keywords: resend, no acknowledgemen
 - Worker step 2 `InvokePriorityResend` and step 8 `GeneralPacketResend` → `PacketTransferResendHandler` (`ExportQueueProcess.cs#L966-L1223`) → RepTransfer `TransferResendPacket` / `Priority-Resend`.
 - Timing: `BasicSettings:ResendTimeInH`, `ResendExceedTimeInH` in RepIntegration.
 - Selection rule (`REP.PRIORITY_RESEND_DATA`): packets the other side reports missing or in error, packets in `ERR`, and unacknowledged `PCK`/`PND` packets from the last 60 days, plus manual `PR_RESEND_QUEUE` requests; at most 5 resends per packet, at least 30 minutes apart. Details: DATA-MSREP-RESEND.
-- V2V resend goes through RepAzureRes `V2VAzureResendData`.
+- V2V resend goes through RepAzureRes `V2VAzureResendData` (V2V is a dropped feature).
 
 ## How to tell where a packet is stuck
 

@@ -1,0 +1,114 @@
+id: ISS-IREP-DES-003
+title: 'sync+ import: rows rejected or skipped — schema mismatch between packet and replica table'
+status: draft
+author: claude
+reviewed_by: ''
+last_verified: '2026-11-11'
+mechanism:
+- irep
+runs_on:
+- office
+- vessel
+components:
+- ImportDES
+- ImportDSC
+error_types:
+- dataapply
+related_docs:
+- CMP-IMPORTDES
+- CMP-IMPORTDSC
+- DATA-IREP
+symptoms:
+- Some rows or tables do not arrive; logs "[DATA_SKIPPED] Skipping row ID", "Bulk write rejected row data", or "schema comparison failed".
+- ImportDSC logs table create/alter failures or "Table doesnot exist on PAL".
+phrasings:
+- bulk write rejected rows
+- data skipped row
+- schema comparison failed
+- replica table missing column
+- table doesnot exist on pal
+- create table in azure failed
+- dsc failed
+- column type mismatch irep
+- rows skipped import
+- some records missing on vessel sync+
+- some records missing in office irep
+- string truncated replica
+- null into not null column
+- GeneratePalTableSchema empty
+- rep2i table not created
+- schema drift sync+
+- data_skipped
+- bulk copy error irep
+- colum mismatch
+- staging table structure wrong
+signatures:
+- log_file: DesServiceLog_.txt
+  regex: _\[DATA_SKIPPED\]\|Skipping\ row\ ID.*?for\ table.*?packet.*?vessel.*?,\ column.*?value\ could\ not\ be\ stored
+  source: ImportDES/Mariapps.PAL.RepImportDES.DAL/Repository/DesInsertRepository.cs#L128
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: \|Bulk\ write\ rejected\ row\ data\ for\ table.*?,\ record\ Count.*?Retrying\ in\ smaller\ parts\ to\ skip\ only\ the\ bad\ rows
+  source: ImportDES/Mariapps.PAL.RepImportDES.DAL/Repository/DesInsertRepository.cs#L172
+  level: Warning
+  visible_by_default: false
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: _\[DATA_SKIPPED\]\|Skipping\ row\ ID.*?for\ table.*?packet.*?vessel.*?,\ rejected\ by\ the\ office\ table\.
+  source: ImportDES/Mariapps.PAL.RepImportDES.DAL/Repository/DesInsertRepository.cs#L229
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: \|\ In\ packet.*?Table.*?schema\ comparison\ failed\ when\ checking\ with
+  source: ImportDES/Mariapps.PAL.RepImportDES/BL/Process/DesReaderBL.cs#L197
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DscServiceLog_.txt
+  regex: VesselObjectId:.*?,\ GeneratePalTableSchema\ result\ empty
+  source: ImportDSC/Mariapps.PAL.RepImportDSC/BL/RepImportDSCBL.cs#L445
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DscServiceLog_.txt
+  regex: 'Table\ doesnot\ exist\ on\ PAL,\ TableId:.*?,\ TableName:.*?,\ VesselObjectId:'
+  source: ImportDSC/Mariapps.PAL.RepImportDSC/BL/RepImportDSCBL.cs#L520
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DscServiceLog_.txt
+  regex: 'Create\ table\ in\ azure\ failed,\ TableId:.*?,\ TableName:.*?,\ VesselObjectId:.*?,\ ErrorMessage:'
+  source: ImportDSC/Mariapps.PAL.RepImportDSC/BL/RepImportDSCBL.cs#L525
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DscServiceLog_.txt
+  regex: 'CreateTablesInAzure\ DB\ execution\ failed,\ TableName:.*?,\ ErrorMessage:'
+  source: ImportDSC/Mariapps.PAL.RepImportDSC/BL/AzureTableCreatorBL.cs#L87
+  level: Error
+  visible_by_default: true
+  confidence: high
+distinguishing_checks:
+- check: Read the column diagnostics in the "Bulk write rejected" line (table id, columns).
+  if_true: type/length/null problem -> schema drift between sender table and replica table
+  if_false: no diagnostics -> check ImportDSC log for the table
+- check: Did ImportDSC succeed for the table id (create/alter)?
+  if_true: no -> fix DSC failure first
+  if_false: yes -> data problem in specific rows
+solutions:
+- id: SOL-IREP-DES-003-A
+  title: Align schema and reprocess
+  when: Replica/staging table differs from source.
+  steps:
+  - do: Dev compares source and replica schema for the table id.
+    who: dev
+    requires_approval: false
+    verify: Difference identified.
+  - do: Apply schema fix (DSC re-run or script) and reprocess skipped rows via the documented reprocess route.
+    who: dev
+    requires_approval: true
+    verify: Skipped rows applied; no new rejection.
+  escalate_if: The failure repeats after the fix, or the cause is not covered by the checks above.

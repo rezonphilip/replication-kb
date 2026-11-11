@@ -1,0 +1,100 @@
+id: ISS-IREP-CDT-001
+title: 'sync+ export: change tracking not enabled or CDT query fails for a table'
+status: draft
+author: claude
+reviewed_by: ''
+last_verified: '2026-11-11'
+mechanism:
+- irep
+runs_on:
+- office
+- vessel
+components:
+- ExportCDT
+error_types:
+- dataapply
+- db
+related_docs:
+- CMP-EXPORTCDT
+- FLW-IREP-EXPORT
+- DATA-IREP
+symptoms:
+- Changes made in PAL for one or more tables never reach the other side; other tables replicate.
+- CDTServiceLog shows the table id with an error, or the SQL text "Change tracking is not enabled on table".
+- Usually after a database restore, a new table added to the export order, or change tracking retention cleanup.
+phrasings:
+- change tracking not enabled
+- CT not enabled on table
+- cdt query failed
+- cdt error for table
+- table changes not exported
+- irep not picking changes
+- sync+ not exporting one table
+- smartsync+ table missing changes
+- new table not replicating sync+
+- after db restore irep export stopped
+- change tracking disabled after restore
+- export cdt failing for table id
+- CHANGETABLE error
+- min valid version error
+- cdt version too old
+- records not going to record sync
+- REP_RECORD_SYNC empty
+- data changed in office not reaching vessel irep
+- data changed on ship not reaching office sync+
+- chnage tracking not enabeld
+- export cdt table error
+- enable change tracking for replication table
+signatures:
+- log_file: CDTServiceLog_.txt
+  regex: Change tracking is not enabled on table '(?<table>[^']+)'
+  source: ExportCDT/Mariapps.PAL.RepExportCDT/Logs/Export_CDT_20240415.txt#L3
+  level: Error
+  visible_by_default: true
+  confidence: high
+  note: SQL Server message text seen in a real 2024 CDT log; it follows the code template in the same line.
+- log_file: CDTServiceLog_.txt
+  regex: 'TableId:.*?,\ ReplicaTypeId:.*?,\ Error:'
+  source: ExportCDT/Mariapps.PAL.RepExportCDT/BL/DBConnectionAggregator.cs#L324
+  level: Error
+  visible_by_default: true
+  confidence: high
+distinguishing_checks:
+- check: 'Read the SQL text after the CDT log line (or set the log level to Information temporarily): is it "Change tracking is not enabled", "invalid object", or a version/retention message?'
+  if_true: change-tracking message -> enable change tracking on the database and the named table (DBA)
+  if_false: other SQL text -> see ISS-IREP-CDT-002 (query) or ISS-IREP-CDT-003 (procedure/version)
+- check: Run a read-only check of sys.change_tracking_tables for the table named in the message.
+  if_true: table missing from the list -> change tracking is off for it
+  if_false: table present -> the export query or last extracted version is the problem
+solutions:
+- id: SOL-IREP-CDT-001-A
+  title: Enable change tracking for the table
+  when: The SQL message says change tracking is not enabled.
+  steps:
+  - do: Record database, schema.table and replica type id from the log.
+    who: support
+    requires_approval: false
+    verify: Details recorded.
+  - do: DBA enables change tracking on the database (if needed) and on the table, using the deployment scripts for the version.
+    who: dev
+    requires_approval: true
+    verify: sys.change_tracking_tables lists the table.
+  - do: Wait for the next CDT cycle; check that REP_RECORD_SYNC/record vessel sync rows appear for the table.
+    who: support
+    requires_approval: false
+    verify: No new CDT error for the table; rows exported.
+  escalate_if: The failure repeats after the fix, or the cause is not covered by the checks above.
+- id: SOL-IREP-CDT-001-B
+  title: Re-baseline after a restore or retention loss
+  when: Last extracted version is older than the minimum valid change tracking version.
+  steps:
+  - do: Dev decides whether a full re-sync of the table is required (data comparison between sides).
+    who: dev
+    requires_approval: true
+    verify: Decision recorded.
+  - do: Apply the documented re-baseline (reset the last extracted version) only with approval.
+    who: dev
+    requires_approval: true
+    verify: CDT cycle completes for the table.
+  escalate_if: The failure repeats after the fix, or the cause is not covered by the checks above.
+notes: The sample log is from an older build (2024); the current code logs the same SQL text inside the TableId template.

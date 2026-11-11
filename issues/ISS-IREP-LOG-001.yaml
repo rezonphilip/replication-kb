@@ -1,0 +1,69 @@
+id: ISS-IREP-LOG-001
+title: 'sync+/MS-REP: warnings and information hidden — default Serilog minimum level is Error'
+status: draft
+author: claude
+reviewed_by: ''
+last_verified: '2026-11-11'
+mechanism:
+- irep
+runs_on:
+- office
+- vessel
+components:
+- ComINT
+- ExportCDT
+- ExportDCS
+- ImportDES
+- ImportDSC
+- ImportRBP
+- ComPBR
+error_types:
+- config
+related_docs:
+- PLT-IREP
+- PLT-MSREP-OVERVIEW
+symptoms:
+- Replication is not progressing but the log shows no error.
+- Expected warnings (skip, retry, incorrect counter) never appear.
+- Some status lines appear at Error level although nothing failed (see ISS-PLATFORM-BENIGN).
+phrasings:
+- no error in log but not working
+- log empty
+- warnings not in log
+- cannot see why skipped
+- increase log level
+- serilog minimum level
+- enable information log
+- log only shows errors
+- debug logging irep
+- cdt query error not logged
+- need more logs
+- silent failure
+- log level error only
+- turn on verbose
+- logs missing details
+- where are warning logs
+- set log level warning
+- nothing logged sync+
+- loging level
+- quiet log replication
+signatures: []
+distinguishing_checks:
+- check: Check Serilog:MinimumLevel in the service appsettings (name only).
+  if_true: Error -> warnings and information are hidden; raise temporarily to Warning or Information
+  if_false: lower -> look in the correct log file (see log_files list)
+solutions:
+- id: SOL-IREP-LOG-001-A
+  title: Temporarily raise the log level
+  when: Need evidence of a hidden warning.
+  steps:
+  - do: Raise Serilog minimum level to Warning (or Information briefly) on the affected service.
+    who: support
+    requires_approval: true
+    verify: Warning lines appear.
+  - do: Restore the level after collecting evidence; Information is very verbose.
+    who: support
+    requires_approval: true
+    verify: Log size back to normal.
+  escalate_if: The failure repeats after the fix, or the cause is not covered by the checks above.
+notes: 'Absence card: no signature. The dashboard should show it when a service has no Error lines but its queues do not move.'

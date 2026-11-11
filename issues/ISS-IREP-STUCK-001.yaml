@@ -1,0 +1,101 @@
+id: ISS-IREP-STUCK-001
+title: sync+ worker stopped or run flag not released
+status: draft
+author: claude
+reviewed_by: ''
+last_verified: '2026-11-11'
+mechanism:
+- irep
+runs_on:
+- office
+- vessel
+components:
+- ExportCDT
+- ExportDCS
+- ImportDES
+- ImportRBP
+- ComPBR
+error_types:
+- stuck
+related_docs:
+- PLT-IREP
+- CMP-EXPORTCDT
+- CMP-EXPORTDCS
+- CMP-IMPORTDES
+symptoms:
+- A sync+ service stops logging cycles; or logs "WorkerService ExecuteAsync, ErrorMessage" / "Unhandled error in process cycle".
+- ExportCDT logs that the process status was not released by this run (flag force-cleared).
+- Work resumes after a service restart or after the in-memory reset interval.
+phrasings:
+- irep service stopped
+- worker service crashed
+- sync+ not running
+- process status not released
+- cdt run flag stuck
+- unhandled error in process cycle
+- export cdt not starting
+- des worker stopped
+- rbp worker stopped
+- needs restart for irep
+- irep hangs
+- no new logs from service
+- interval zero tight loop
+- cpu high export dcs
+- worker loop dead
+- smartsync+ stuck
+- sync plus not moving
+- process already running irep
+- servcie stuck
+- running flag not reset
+signatures:
+- log_file: CDTServiceLog_.txt
+  regex: 'WorkerService\ ExecuteAsync,\ ErrorMessage:'
+  source: ExportCDT/Mariapps.PAL.RepExportCDT/WorkerService.cs#L67
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: CDTServiceLog_.txt
+  regex: Process\ status\ not\ released\ by\ this\ run,\ ReplicaTypeId:.*?:\ the\ flag\ was\ force\-cleared\ while\ it\ ran\ and\ may\ now\ belong\ to\ a\ newer\ run\.
+  source: ExportCDT/Mariapps.PAL.RepExportCDT/BL/RepExportCDTBL.cs#L214
+  level: Warning
+  visible_by_default: false
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: \|Unhandled\ error\ in\ process\ cycle
+  source: ImportDES/Mariapps.PAL.RepImportDES/WorkerService.cs#L75
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: RbpServiceLog_.txt
+  regex: 'WorkerService\ ExecuteAsync,\ ErrorMessage:'
+  source: ImportRBP/Mariapps.PAL.RepImportRBP/WorkerService.cs#L65
+  level: Error
+  visible_by_default: true
+  confidence: high
+distinguishing_checks:
+- check: Is the latest line in the service log older than two cycle intervals?
+  if_true: yes -> worker loop ended or blocked (ExportDCS and ComPBR workers have no generic catch, so one exception ends the loop)
+  if_false: no -> the service runs; look for the class card of its last error
+- check: Check the worker interval setting (name only, e.g. CheckIntervalInMin). Is it 0?
+  if_true: 0 -> tight loop / high CPU
+  if_false: non-zero -> stale flag or crash
+solutions:
+- id: SOL-IREP-STUCK-001-A
+  title: Restart the service in a quiet period
+  when: Worker loop ended or in-memory flag stale.
+  steps:
+  - do: Restart the Windows service / IIS app pool of the stuck service.
+    who: support
+    requires_approval: true
+    verify: New cycle lines appear in its log.
+  escalate_if: The failure repeats after the fix, or the cause is not covered by the checks above.
+- id: SOL-IREP-STUCK-001-B
+  title: Fix the interval setting
+  when: Interval 0 or missing.
+  steps:
+  - do: Set the documented interval in configuration (dev/ops).
+    who: dev
+    requires_approval: true
+    verify: Cycle frequency is as configured.
+  escalate_if: The failure repeats after the fix, or the cause is not covered by the checks above.
+notes: 'ComINT WorkerService does no work: it waits once (code 30 min, log says 15) and returns; that is expected.'

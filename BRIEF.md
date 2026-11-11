@@ -12,18 +12,17 @@ The KB is read by the ReplicationDashboard **without any AI at runtime**. The da
 
 So every piece of text must be *findable by words a support engineer will actually type or paste*, and every section must make sense when shown on its own.
 
-## 2. The platform in one paragraph (pilot scope)
+## 2. The platform: three mechanisms
 
-MS-REP is a set of 19 .NET services installed on **both office and vessel**; behaviour differs by configuration and `Common.CO_Parameters` rows (for example `REP_LOCATION`). Inside MS-REP:
+Replication runs on **both office and vessel**, and behaviour differs by configuration (`Common.CO_Parameters`, REP2X/REP2I parameters, appsettings). Three mechanisms share the platform; always tag content with the right `mechanism` label.
 
-| Group | Services | Role |
-|---|---|---|
-| SmartSync transport | RepSbus, RepAzure, RepAzureRes | Azure Service Bus messaging + Azure Blob download / upload. Shared by every replication mechanism. |
-| Transfer adapter | RepTransfer | Adapter over the transport: moves packets to the right outbox / medium, handles resend. Serves Priority Replication; may serve iRep transfer flows. |
-| Orchestrator | RepIntegration | Drives Priority Replication end to end. For iRep it handles **only transfer** (not data preparation, ingestion or packet creation). |
-| PR core / DB gateway | RepDBLogW | Database gateway of Priority Replication. iRep may call it occasionally to read data. |
-| PR send side | RepProData, RepPacketCreation, RepCompression, RepSplit, RepPacketInterim, RepTrack, RepMedium, RepQueueManage | Prepare and package outgoing data. |
-| PR receive side | RepAcquisition, RepFileMerge, RepDecompress, RepSaveData, RepAckn | Pick up, rebuild, apply and acknowledge incoming packets. |
+| Mechanism (label) | Also called | Services | Role |
+|---|---|---|---|
+| SmartSync (`smartsync`) | sync, transport | RepSbus, RepAzure, RepAzureRes; adapter RepTransfer | Azure Service Bus messaging + Azure Blob upload/download. Shared by PR and iRep. |
+| Priority Replication (`priority-replication`) | PR | RepIntegration (orchestrator), RepDBLogW (DB gateway), send side (RepProData, RepPacketCreation, RepCompression, RepSplit, RepPacketInterim, RepTrack, RepMedium, RepQueueManage), receive side (RepAcquisition, RepFileMerge, RepDecompress, RepSaveData, RepAckn) | Priority/legacy replication of selected data. |
+| iRep (`irep`) | SmartSync+, sync+ | ComINT (config gateway), ExportCDT, ExportDCS (export), ImportDES, ImportDSC, ImportRBP (import), ComPBR (inspection) | Change-tracking based table replication through REP2X/REP2I staging databases. Uses RepIntegration `TransferGeneral` → RepTransfer → SmartSync for transport, and RepAzure/RepDBLogW to queue received packets. |
+
+Dropped features (V2V, delivery method 3) stay recognisable but are never troubleshot.
 
 ## 3. Hard rules
 
@@ -50,9 +49,15 @@ Follow `templates/issue.yaml`. Each card needs:
 
 - `symptoms` written the way users report them,
 - `phrasings`: **20–50** different ways a person might describe the issue (short, long, misspelt, ship-side vs office-side wording),
-- `signatures`: regexes built **only** from real log templates in `inventory/ms-rep-logs.md` (cite the source line),
+- `signatures`: regexes built **only** from real log templates in `inventory/*-logs.md` or real lines of a sample log in the repository (cite the source line); the validator re-checks every regex against the cited line,
 - `distinguishing_checks`: how to tell this issue from look-alikes,
 - `solutions`: ordered checklists; each step says who does it, whether it needs approval, and how to verify.
+
+Two kinds of card exist:
+
+- **Hand-written cards** (`ISS-<AREA>-NNN`, no `generated` flag): specific problems with precise checks. They take precedence in the failure-point catalogue.
+- **Generated class cards** (`ISS-<GROUP>-<CLASS>`, `generated: true`) from `tools/gen_class_cards.py`: one per service group × failure class (SEQUENCE, PACKET, TRANSPORT, STUCK, CACHE, DATAAPPLY, CONFIG, HTTP, FILE, INPUT, DB, GENERIC) so that **every** failure point in the code lands on a card. Never hand-edit them; improve the generator or write a hand card that captures the failure points.
+- `ISS-PLATFORM-BENIGN` lists lines logged at Error/Warning level that are not failures; the dashboard suppresses them.
 
 ## 6. Process for one repository
 
@@ -61,8 +66,9 @@ Follow `templates/issue.yaml`. Each card needs:
 3. Component article per service (template `component.md`).
 4. Flow articles (template `flow.md`) for each end-to-end path.
 5. Config reference (`90-config`) — keys, where read, effect. Database reference (`60-data`) — settings tables, status codes and the procedures that reset them.
-6. Issue cards seeded from log error templates and known incidents.
-7. Self-check (section 7) and write `reviews/<date>-<repo>.md`.
+6. Failure-point catalogue: `tools/extract.py` → `tools/gen_failure_points.py` (rules in `tools/failure_rules.yaml`) → `catalog/failure-points.yaml` + `inventory/failure-points.md`. Every Error/Critical/Warning log call and every `throw` becomes a failure point with regex, level, visibility at the default log level, class and card.
+7. Issue cards: hand-write specific cards for the important failure points (known incidents, sample logs, silent failures), then run `tools/gen_class_cards.py` and `gen_failure_points.py` again so every failure point resolves to a card.
+8. Self-check (section 7) and write `reviews/<date>-<repo>.md`.
 
 ## 7. Self-check before handing over
 
@@ -71,4 +77,5 @@ Follow `templates/issue.yaml`. Each card needs:
 - [ ] Every label value exists in `dictionaries/labels.yaml`.
 - [ ] Every `##` section has a summary sentence and a `Keywords:` line.
 - [ ] Every signature regex matches at least one template in `inventory/*-logs.md`.
+- [ ] `python3 -I tools/validate.py . <srcroot>` reports `issues: 0` (citations, regex-vs-source, secrets, phrasings, failure-point → card, related_docs).
 - [ ] Open questions are recorded, not answered by guess.

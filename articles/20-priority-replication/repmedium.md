@@ -19,6 +19,8 @@ last_verified: 2026-11-11
 
 RepMedium answers one question: how large may a transfer be for this vessel and medium (`GetSizeRestriction`). RepIntegration calls it before splitting for transfer.
 
+> **V2V (vessel-to-vessel) is a dropped feature.** The V2V routes, procedures and message types mentioned in this article still exist in the code and database but are not in use; do not troubleshoot them. See DATA-MSREP-OFFVSL.
+
 ## Role in replication
 
 RepMedium is a Priority Replication send-side step with no timer of its own: it runs only when called over HTTP (no hosted background service found in the project). Keywords: RepMedium, medium, priority replication, send side, returns size limits per medium.

@@ -1,0 +1,206 @@
+id: ISS-PLATFORM-BENIGN
+title: Status lines logged at Error/Warning level that are not failures
+status: draft
+author: claude
+reviewed_by: ''
+last_verified: '2026-11-11'
+mechanism:
+- irep
+- priority-replication
+- smartsync
+runs_on:
+- office
+- vessel
+components:
+- ComINT
+- ExportCDT
+- ExportDCS
+- ImportDES
+- ImportRBP
+- ComPBR
+- RepDBLogW
+- RepAckn
+- RepFileMerge
+error_types:
+- benign
+related_docs:
+- PLT-IREP
+- PLT-MSREP-OVERVIEW
+symptoms:
+- Log contains Error-level lines such as "Process started", "CACHE_CHEKING", "Awaiter Insert status", "Deleted entry ... successfully" or "END:" while replication works.
+phrasings:
+- process started error in log
+- CACHE_CHEKING error
+- awaiter insert status error
+- is this error real
+- false error in log
+- error lines but working
+- default delay of 15 mins
+- deleted entry successfully error
+- move back process successfully
+- DcsServiceCallAsync End error
+- StartRepImportSync error
+- Process Reinitiated
+- treating update as successful
+- duplicate key detected and ignored
+- single-row fallback succeeded
+- skipped packet already exists treating as success
+- truncated response message
+- 'INFO: logged as error'
+- 'END: AzureDblog'
+- harmless errors
+- ignore these errors?
+signatures:
+- log_file: DbLogServiceLog_.txt
+  regex: DbPckLogRepository\.SaveMissingPacketStatusBulk\ \-\ Duplicate\ key\ detected\ and\ ignored
+  source: RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/DbPckLogRepository.cs#L530
+  level: Warning
+  visible_by_default: false
+  confidence: high
+- log_file: DbLogServiceLog_.txt
+  regex: 'InformationSaveMethod:'
+  source: RepDBLogW/MariApps.PAL.Rep.DBlogW.DAL/Repositories/SbusNotificationRepository.cs#L1655
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DbLogServiceLog_.txt
+  regex: 'END:\ AzureDblog\|ProcessNgV4SyncHd\|ID:'
+  source: RepDBLogW/MariApps.PAL.Rep.DBlogW.Service/Controllers/AzureDblogController.cs#L80
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: FileMergeLog_.txt
+  regex: INFO:FileMergeController\|MergeFile\|MergeZipFIle\|Combinefile\|MESSAGE:ERROR\ WHILE\ MOVING\ FILE\ TO\ DIRECTORY\ AFTER\ COMPRESSION
+  source: RepFileMerge/MariApps.PAL.Rep.FileMerge.Service/BL/FileMergeBL.cs#L557
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: ComINTServiceLog_.txt
+  regex: Process\ started
+  source: ComINT/Mariapps.PAL.ComINT/WorkerService.cs#L46
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: ComINTServiceLog_.txt
+  regex: default\ delay\ of\ 15\ mins\ interval\ set\ for\ worker\ service
+  source: ComINT/Mariapps.PAL.ComINT/WorkerService.cs#L61
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: PbrServiceLog_.txt
+  regex: StartRepImportSync
+  source: ComPBR/Mariapps.PAL.RepComPBR/BL/RepComPBRBL.cs#L142
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: CDTServiceLog_.txt
+  regex: 'rows\ affected\ not\ reported\ \(.*?\),\ treating\ update\ as\ successful,\ TableId:.*?,\ CDTVersion:'
+  source: ExportCDT/Mariapps.PAL.RepExportCDT.DAL/Repository/AzureDbRepository.cs#L510
+  level: Warning
+  visible_by_default: false
+  confidence: high
+- log_file: CDTServiceLog_.txt
+  regex: 'CACHE_CHEKING\ ReplicaTypeId:.*?,\ ClearCacheEnabled:.*?,\ ClearCacheIntervalInMin:.*?,\ GetCacheStatus:.*?,\ UtcNow:.*?,\ CacheCLearingElapsedMinutes:'
+  source: ExportCDT/Mariapps.PAL.RepExportCDT/BL/RepExportCDTBL.cs#L186
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: CDTServiceLog_.txt
+  regex: CACHE_CHEKING\ entered\ cache\ clearing
+  source: ExportCDT/Mariapps.PAL.RepExportCDT/BL/RepExportCDTBL.cs#L187
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: CDTServiceLog_.txt
+  regex: DcsServiceCallAsync\ End
+  source: ExportCDT/Mariapps.PAL.RepExportCDT/BL/RepExportCDTBL.cs#L277
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DcsServicePalLog_.txt
+  regex: \|\ Awaiter\ Insert\ status\ for\ vessel
+  source: ExportDCS/Mariapps.PAL.RepExportDCS.DAL/Repository/RepExportDCSRepository.cs#L619
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DcsServicePalLog_.txt
+  regex: \|\ Awaiter\ Insert\ status\ for\ is
+  source: ExportDCS/Mariapps.PAL.RepExportDCS.DAL/Repository/RepExportDCSRepository.cs#L952
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DcsServicePalLog_.txt
+  regex: \|Cache\ Delete\ status\ for\ vessel
+  source: ExportDCS/Mariapps.PAL.RepExportDCS/BL/Main/ExportBL.cs#L431
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: \|Skipped\ packet\ already\ exists\.\ Treating\ as\ success\ for\ PacketName.*?,\ Vessel.*?,\ PacketCounter
+  source: ImportDES/Mariapps.PAL.RepImportDES.DAL/Repository/ImportRepository.cs#L997
+  level: Warning
+  visible_by_default: false
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: \|Bulk\ missing\ packet\ status\ insert\ failed,\ but\ single\-row\ fallback\ succeeded\ for\ vessel.*?and\ type.*?in\ range
+  source: ImportDES/Mariapps.PAL.RepImportDES/BL/DataConduitMethods/ImportDesDataConduitBL.cs#L1127
+  level: Warning
+  visible_by_default: false
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: \|Deleted\ entry\ with\ missing\ File\ Name\ or\ location\ successfully\ from\ Validate\ Q
+  source: ImportDES/Mariapps.PAL.RepImportDES/BL/Process/ProcessQBL.cs#L325
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: \|Deleted\ entry\ with\ packetCounter\ 0\ successfully\ from\ Validate\ Q
+  source: ImportDES/Mariapps.PAL.RepImportDES/BL/Process/ProcessQBL.cs#L340
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: \|Move\ back\ process.*?successfully\ to\ folder
+  source: ImportDES/Mariapps.PAL.RepImportDES/BL/Validate/ImportValidateBL.cs#L562
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: \|Deleted\ entry\ with\ missing\ File\ Name\ or\ location\ successfully\ from\ Validate\ Q\|\ InputData
+  source: ImportDES/Mariapps.PAL.RepImportDES/BL/Validate/ImportValidateBL.cs#L590
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: \|Deleted\ entry\ with\ packetCounter\ 0\ successfully\ from\ Validate\ Q\|\ InputData
+  source: ImportDES/Mariapps.PAL.RepImportDES/BL/Validate/ImportValidateBL.cs#L623
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: RbpServiceLog_.txt
+  regex: WorkerService\ ExecuteAsync\ \|\ Process\ started
+  source: ImportRBP/Mariapps.PAL.RepImportRBP/WorkerService.cs#L43
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: RbpServiceLog_.txt
+  regex: WorkerService\ ExecuteAsync\ \|\ Process\ Reinitiated
+  source: ImportRBP/Mariapps.PAL.RepImportRBP/WorkerService.cs#L48
+  level: Error
+  visible_by_default: true
+  confidence: high
+distinguishing_checks:
+- check: Does the line match one of the benign signatures and is the queue moving?
+  if_true: yes -> ignore; the dashboard suppresses it
+  if_false: no -> use the class card for the line
+solutions:
+- id: SOL-PLATFORM-BENIGN-A
+  title: No action
+  when: Status line only.
+  steps:
+  - do: Ignore; dashboard suppresses these lines.
+    who: support
+    requires_approval: false
+    verify: Queues move normally.
+  escalate_if: The failure repeats after the fix, or the cause is not covered by the checks above.
+notes: 'Generated list of benign lines: catalog/failure-points.yaml entries with card ISS-PLATFORM-BENIGN.'

@@ -1,0 +1,125 @@
+id: ISS-IREP-RBP-001
+title: 'sync+ import: RBP cannot apply rows to PAL (not enabled, table/endpoint missing, application API fails)'
+status: draft
+author: claude
+reviewed_by: ''
+last_verified: '2026-11-11'
+mechanism:
+- irep
+runs_on:
+- office
+- vessel
+components:
+- ImportRBP
+error_types:
+- dataapply
+- http
+related_docs:
+- CMP-IMPORTRBP
+- FLW-IREP-IMPORT
+symptoms:
+- Rows stay in REP2I _REP / _REP_DEL tables and never reach PAL.
+- Logs "RBP not enabled for ReplicaTypeId", "Table name not found for TableId", "API call failed for table" or the HTTP status of the application endpoint.
+phrasings:
+- rbp not enabled
+- rows stuck in rep2i
+- rep table not emptied
+- api call failed for table
+- application endpoint failed
+- table name not found for tableid
+- simulated api call failed
+- rbp http error
+- endpoint details missing
+- USP_GetEndPointDetails empty
+- data imported but not visible in pal
+- rbp reprocess error
+- batch delete failed rbp
+- processed rows not deleted
+- rbp stuck
+- irep apply failed
+- data not applied ship sync+
+- data not applied office irep
+- rpb not working
+- rbp 500
+signatures:
+- log_file: RbpServiceLog_.txt
+  regex: 'RBP\ not\ enabled\ for\ ReplicaTypeId:'
+  source: ImportRBP/Mariapps.PAL.RepImportRBP/BL/RepImportRBPBL.cs#L149
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: RbpServiceLog_.txt
+  regex: 'Table\ name\ not\ found\ for\ TableId:'
+  source: ImportRBP/Mariapps.PAL.RepImportRBP/BL/RepImportRBPBL.cs#L491
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: RbpServiceLog_.txt
+  regex: 'API\ call\ failed\ for\ table:.*?,\ operation:'
+  source: ImportRBP/Mariapps.PAL.RepImportRBP/BL/RepImportRBPBL.cs#L658
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: RbpServiceLog_.txt
+  regex: Error\ calling\ API\ for\ table
+  source: ImportRBP/Mariapps.PAL.RepImportRBP/BL/RepImportRBPBL.cs#L671
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: RbpServiceLog_.txt
+  regex: '❌\ Simulated\ API\ call\ FAILED\ to:.*?,\ Status:.*?,\ Response:'
+  source: ImportRBP/Mariapps.PAL.RepImportRBP/BL/RepImportRBPBL.cs#L691
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: RbpServiceLog_.txt
+  regex: Error\ processing\ insert/update\ data\ for\ table
+  source: ImportRBP/Mariapps.PAL.RepImportRBP/BL/RepImportRBPBL.cs#L584
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: RbpServiceLog_.txt
+  regex: 'processed\ rows\ could\ not\ be\ deleted\ for\ table:'
+  source: ImportRBP/Mariapps.PAL.RepImportRBP/BL/RepImportRBPBL.cs#L734
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: RbpServiceLog_.txt
+  regex: 'Batch\ delete\ failed,\ retrying\ row\ by\ row,\ TableName:.*?,\ REP_ID_UNIC:.*?,\ ErrorMessage:'
+  source: ImportRBP/Mariapps.PAL.RepImportRBP.DAL/Repository/Rep2iRepository.cs#L814
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: \|RBP\ service\ call\ returned\ an\ HTTP\ error
+  source: ImportDES/Mariapps.PAL.RepImportDES/ServiceClient/RbpServiceClient.cs#L83
+  level: Warning
+  visible_by_default: false
+  confidence: high
+distinguishing_checks:
+- check: Is RBP enabled for the replica type (configuration flag, presence only)?
+  if_true: no -> enable per deployment decision
+  if_false: yes -> check endpoint rows for the table id
+- check: Does the endpoint (USP_GetEndPointDetails) return base URL and API for the table, and does the application API answer?
+  if_true: missing -> configure endpoint
+  if_false: API error -> application side; read the HTTP status
+solutions:
+- id: SOL-IREP-RBP-001-A
+  title: Configure or restore the application endpoint
+  when: Endpoint missing or failing.
+  steps:
+  - do: Dev configures endpoint rows for the table or restores the application API.
+    who: dev
+    requires_approval: true
+    verify: API call succeeds; _REP rows are deleted after processing.
+  escalate_if: The failure repeats after the fix, or the cause is not covered by the checks above.
+- id: SOL-IREP-RBP-001-B
+  title: Enable RBP for the replica type
+  when: RBP disabled.
+  steps:
+  - do: Dev/ops enables RBP after confirming it is intended for this site.
+    who: dev
+    requires_approval: true
+    verify: RBP processes the queue.
+  escalate_if: The failure repeats after the fix, or the cause is not covered by the checks above.
+notes: The method named SimulateApiCall performs a real HTTP POST; its log line includes the response body — treat as sensitive.

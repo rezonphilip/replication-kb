@@ -1,0 +1,69 @@
+id: ISS-IREP-DCS-004
+title: 'sync+ export: environment unique code / unique id empty — export exits'
+status: draft
+author: claude
+reviewed_by: ''
+last_verified: '2026-11-11'
+mechanism:
+- irep
+runs_on:
+- office
+- vessel
+components:
+- ExportDCS
+error_types:
+- config
+related_docs:
+- CMP-EXPORTDCS
+- CFG-IREP
+symptoms:
+- ExportDCS logs a Critical line "Unique Code is empty or 0, exiting process" or "Unique Id is empty or 0" and creates no packets.
+- Typical on a new install or after a database restore to another environment.
+phrasings:
+- unique code is empty
+- unique id is empty
+- exiting process unique code
+- environment unique code missing
+- dcs exits immediately
+- no packets new install irep
+- unique code 0
+- env identity missing
+- after restore wrong unique code
+- critical error export dcs
+- unqiue code empty
+- vessel object id not set
+- office unique code missing
+- environment not identified
+- sync+ install incomplete
+- export dcs critical
+- export stops at start
+- unique id 0
+- missing environment settings
+- packet name unique code blank
+signatures:
+- log_file: DcsServicePalLog_.txt
+  regex: \|Unique\ Code\ is\ empty\ or\ 0,\ exiting\ process
+  source: ExportDCS/Mariapps.PAL.RepExportDCS/BL/Main/ExportBL.cs#L95
+  level: Critical
+  visible_by_default: true
+  confidence: high
+- log_file: DcsServicePalLog_.txt
+  regex: \|Unique\ Id\ is\ empty\ or\ 0,\ exiting\ process
+  source: ExportDCS/Mariapps.PAL.RepExportDCS/BL/Main/ExportBL.cs#L101
+  level: Critical
+  visible_by_default: true
+  confidence: high
+distinguishing_checks:
+- check: Run the read-only presence check for the environment identity settings (unique code / unique id).
+  if_true: EMPTY or MISSING -> setup incomplete
+  if_false: PRESENT -> cache holds an old value; clear cache
+solutions:
+- id: SOL-IREP-DCS-004-A
+  title: Set the environment identity
+  when: Identity settings missing.
+  steps:
+  - do: Dev/ops sets the environment identity through the installation procedure (values never in tickets).
+    who: dev
+    requires_approval: true
+    verify: Presence check PRESENT; export starts.
+  escalate_if: The failure repeats after the fix, or the cause is not covered by the checks above.

@@ -1,0 +1,101 @@
+# Classification rules for tools/gen_failure_points.py.
+# Every Error/Critical/Warning log template and every thrown exception found in code is assigned
+# (1) to a hand-written issue card whose signature matches its source line, else
+# (2) to the first matching class below, giving card ISS-<GROUP>-<CLASS>.
+# Rules match the message template (placeholders shown as {X}); case-insensitive.
+
+groups:
+  SYNC:   {services: [RepSbus, RepAzure, RepAzureRes], mechanism: smartsync, title: "SmartSync transport"}
+  XFER:   {services: [RepTransfer], mechanism: smartsync, title: "RepTransfer (transfer adapter)"}
+  INTEG:  {services: [RepIntegration], mechanism: priority-replication, title: "RepIntegration (orchestrator)"}
+  DBLOGW: {services: [RepDBLogW], mechanism: priority-replication, title: "RepDBLogW (database gateway)"}
+  PRSEND: {services: [RepProData, RepPacketCreation, RepCompression, RepSplit, RepPacketInterim, RepTrack, RepMedium, RepQueueManage], mechanism: priority-replication, title: "Priority Replication send side"}
+  PRRECV: {services: [RepAcquisition, RepFileMerge, RepDecompress, RepSaveData, RepAckn], mechanism: priority-replication, title: "Priority Replication receive side"}
+  IRCFG:  {services: [ComINT], mechanism: irep, title: "sync+ configuration gateway (ComINT)"}
+  IREXP:  {services: [ExportCDT, ExportDCS], mechanism: irep, title: "sync+ export side (ExportCDT, ExportDCS)"}
+  IRIMP:  {services: [ImportDES, ImportDSC, ImportRBP], mechanism: irep, title: "sync+ import side (ImportDES, ImportDSC, ImportRBP)"}
+  IRPBR:  {services: [ComPBR], mechanism: irep, title: "sync+ reporting (ComPBR)"}
+
+log_files:
+  ComINT: ComINTServiceLog_.txt
+  ComPBR: PbrServiceLog_.txt
+  ExportCDT: CDTServiceLog_.txt
+  ExportDCS: DcsServicePalLog_.txt
+  ImportDES: DesServiceLog_.txt
+  ImportDSC: DscServiceLog_.txt
+  ImportRBP: RbpServiceLog_.txt
+  RepAckn: AcknLog_.txt
+  RepAcquisition: AcquisitionLog_.txt
+  RepAzure: AzureService_.txt
+  RepAzureRes: AzureResumeLog_.txt
+  RepCompression: Compression_Log_.txt
+  RepDBLogW: DbLogServiceLog_.txt
+  RepDecompress: DecompressLog_.txt
+  RepFileMerge: FileMergeLog_.txt
+  RepIntegration: IntegrationServiceLog_.txt
+  RepMedium: Log_.txt
+  RepPacketCreation: PacketCreatLog_.txt
+  RepPacketInterim: PacketInterimLog_.txt
+  RepProData: ProDataLog_.txt
+  RepQueueManage: QueueManagerLog_.txt
+  RepSaveData: SaveDataLog_.txt
+  RepSbus: SbusLog_.txt
+  RepSplit: SplitServiceLog_.txt
+  RepTrack: TrackServiceLog_.txt
+  RepTransfer: TransferServiceLog_.txt
+
+# Error-level lines that are NOT failures (status/progress written with LogError so they pass the Error filter).
+benign:
+  - '^(Process started|Process Reinitiated|WorkerService ExecuteAsync \| Process (started|Reinitiated)|StartRepImportSync|DcsServiceCallAsync End)$'
+  - 'CACHE_CHEKING'
+  - 'Awaiter Insert status for'
+  - 'Cache Delete status for vessel'
+  - '^default delay of 15 mins'
+  - 'Move back process .* successfully'
+  - 'Deleted entry with .* successfully'
+  - '^INFO:'
+  - '^END: '
+  - 'InformationSaveMethod'
+  - 'Truncated RESPONSE_MESSAGE'
+  - 'Duplicate key detected and ignored'
+  - 'single-row fallback succeeded'
+  - 'Skipped packet already exists\. Treating as success'
+  - 'treating update as successful'
+
+classes:
+  - id: SEQUENCE
+    title: "Packet sequence: missing, old, duplicate or out-of-order packet counters"
+    rx: 'packet ?counter|packetcounter|missing another packet|gotten is old|already reached|counter .*(latest|not the latest|incorrect|invalid)|missing packet|error packet counter|counter mismatch|last in packet|In Packet Counter|LastInPacket|not latest|future error packet'
+  - id: PACKET
+    title: "Packet file integrity: naming, splits, checksum, decompression, format"
+    rx: 'naming format|name pattern|not of a valid|split|checksum|crc|corrupt|lzma|extension|header|tar |7z|zip|decompress|extract|messagepack|manifest|chunk|stream|offset|buffer|end of file|file size mismatch|block metadata|too small|not in the correct format|invalid format|seekable|readable'
+  - id: TRANSPORT
+    title: "Azure Blob / Service Bus / network transport"
+    rx: 'azure|blob|storage|container|network|speed|upload|download|service ?bus|sbus|queue name|connection too slow|md5|heartbeat|encrypt|decrypt'
+  - id: STUCK
+    title: "Run never starts, overlaps or is stopped: running flags, time limits, crashed workers"
+    rx: 'time ?(limit|exceeded)|already running|already queued|removing status|concurrency gate|unobserved|crash|background task|worker|awaiter status is failed|wait(ing)? (time|timer)|retry limit|retry count|exceeded the time|stopping|aborting|abort|skipped\.|process start skipped|not released'
+  - id: CACHE
+    title: "Cache (Redis / in-memory) read, write or clear failures"
+    rx: 'cache|IntCacheBL|dictionary|memory|active queue|redis'
+  - id: DATAAPPLY
+    title: "Applying replicated rows: bulk write, schema mismatch, rejected rows, live tables"
+    rx: 'bulk|rows?\b|column|schema|data type|destination column|replica|live (data )?table|insert(ing)? to|table (name|order|structure)|spatial|Azure ?Table|alter|DATA_SKIPPED|change tracking|cdt'
+  - id: CONFIG
+    title: "Missing or invalid configuration (appsettings, services.json, CO_Parameters, settings tables)"
+    rx: 'config|not configured|services\.json|serviceconfig|base ?(url|address)|api (url|address|endpoint)|end ?point|connection ?string|defaultconnection|connection settings|co[_ ]parameters|table settings|settings|is_vessel|pr_rep_root|client (code|details)|unique (code|id)|environment|not found in the configuration|path (configuration|value|not found)|folder (could not|not found)|basic config|isVessel|replication code|transfer type|channel information|key master|httpclient null'
+  - id: HTTP
+    title: "Calls between services fail (HTTP errors, timeouts, unreachable services)"
+    rx: 'http|post request|request (timeout|exception)|api call|calling .*api|returned \{|service (not reachable|unavailable)|invoke|external|response|transfer (failed|service)|could not report|TestServiceMethod|PushToService|dcs call|integration api|status code'
+  - id: FILE
+    title: "Files and folders: missing, locked, access denied, move/copy/delete failures"
+    rx: 'file|folder|director|path|locked|access denied|unauthori[sz]ed|i/o|\bio\b|move|copy|delete|inbox|outbox|allzip|being used by another process'
+  - id: INPUT
+    title: "Invalid request or input data (null, zero or missing mandatory values)"
+    rx: 'input|is null|is 0\b|is mandatory|invalid request|cannot be null|null or empty|mandatory|not valid|invalid'
+  - id: DB
+    title: "Database calls fail (stored procedure errors, timeouts, deadlocks, save/read failures)"
+    rx: 'db |database|sql|repository|stored procedure|\bsp\b|save|saving|read(ing)?|updat|insert|fetch|execut|transient|permanent error|duplicate|data did not save|query|queue data|history'
+  - id: GENERIC
+    title: "Unhandled or generic exceptions"
+    rx: '.*'

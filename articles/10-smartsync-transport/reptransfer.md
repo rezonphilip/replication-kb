@@ -19,6 +19,8 @@ last_verified: 2026-11-11
 
 RepTransfer decides *how* a packet leaves for a given vessel and puts the packet files where that delivery method picks them up: an outbox folder for Azure (SmartSync), or a medium folder for the other delivery methods. It also prepares resends and V2V downloads. It has no timer: it only acts when RepIntegration (or another caller) asks.
 
+> **V2V (vessel-to-vessel) is a dropped feature.** The V2V routes, procedures and message types mentioned in this article still exist in the code and database but are not in use; do not troubleshoot them. See DATA-MSREP-OFFVSL.
+
 ## Role in replication
 
 RepTransfer is a thin adapter over the transport, used for transfer-related requirements of Priority Replication and possibly iRep. Keywords: transfer, outbox, delivery method, transfer type, resend, sent folder, medium.
@@ -34,7 +36,7 @@ For every vessel, RepTransfer reads the vessel's delivery method and branches on
 - Transfer type = `DELIVERY_METHOD` from `[REP].[REP_VESSEL_INFRA]` for the vessel (also exposed as `REP.PR_GET_TRANSFER_DATA` operation `TRANSFER_TYPE`; vessel ID `-999` always gives `2`); when `Common.CO_Parameters` `IS_PRODUCT` = `N` the table is read from the `[PAL_REP]` database (`RepTransfer/MariApps.PAL.Rep.Transfer.DAL/TransferRepository.cs#L94-L125`). The read is retried 3 times, 500 ms apart (L19-L20).
 - Empty result → packet fails with `FAILED: Transfer Type could not be found` (`BL/TransferBL.cs#L50-L62`).
 - Types `0` and `1`: files are moved to `<TRANSFER_LOCATION_CODE folder>/<generated folder>/<VesselObjectId>` (`BL/TransferBL.cs#L71-L124`). Both use the `REP_OFF_ROOT` folder (`REP.PR_REP_TRANSFER_MASTER`, DATA-MSREP-SETTINGS); what distinguishes 0 from 1 (e.g. e-mail vs manual medium): Not determined from code.
-- Type `3` maps to `REP_REALM_ROOT` in the database, but `MoveFile` has no branch for it; behaviour for type 3: Not determined from code (open question Q19).
+- Type `3` maps to `REP_REALM_ROOT` in the database; it is not in use (confirmed by the team), which is why `MoveFile` has no branch for it.
 - Type `2` (Azure / SmartSync): files are moved to `<location>/OUT/PR/OUTBOX/<VesselObjectId>`; a `SENT/<VesselObjectId>` folder is created alongside (`BL/TransferBL.cs#L125-L140`). RepAzureRes uploads from there.
 - If the base folder for the type is not configured: `transferMediumBaseFolder is null or empty for transfer type: {TransferType}` (types 0/1) or `Out box folder is not gotten for transfer type` (type 2).
 
@@ -49,7 +51,7 @@ Routes are under `Transfer` (`RepTransfer/MariApps.PAL.Rep.Transfer.Service/Cont
 | `Transfer-Priority-Handler` | Batch priority transfer (`BL/TransferHandler.cs#L31`) | L118 |
 | `TransferResendPacket` / `Priority-Resend` | Resend previously sent packets | L134 / L161 |
 | `TransferPacketExt` | Extended packet transfer (Azure folder structure per client) | L168 |
-| `TransferResendUploadV2V`, `TransferDownloadAzureFile` | Vessel-to-vessel resend/download | L197 / L219 |
+| `TransferResendUploadV2V`, `TransferDownloadAzureFile` | Vessel-to-vessel resend/download (dropped feature) | L197 / L219 |
 | `TransferGeneral` | General (non-priority) transfer | L260 |
 | `TestService`, `GetVersion` | Health | L283 / L292 |
 
@@ -60,7 +62,7 @@ Keywords: REP_PR_AZURE_IN, REP_PR_AZURE_SENT, PR_REP_ROOT, TRANSFER_LOCATION_COD
 | Key | Where | Effect |
 |---|---|---|
 | `DELIVERY_METHOD` | `[REP].[REP_VESSEL_INFRA]` per vessel | Chooses the branch above. |
-| `TRANSFER_LOCATION_CODE` (operation type) | `REP.PR_GET_TRANSFER_DATA` → `REP.PR_REP_TRANSFER_MASTER.REP_CODE` → `Common.CO_Parameters` value whose name contains that code (`RepTransfer/PAL.DatabaseScripts.Office/StoredProcedures/002_SP_[Rep].[PR_GET_TRANSFER_DATA].sql#L24-L28`) | Base folder per delivery method: 0/1 → `REP_OFF_ROOT`, 2 → `REP_AZURE_ROOT`, 3 → `REP_REALM_ROOT`. |
+| `TRANSFER_LOCATION_CODE` (operation type) | `REP.PR_GET_TRANSFER_DATA` → `REP.PR_REP_TRANSFER_MASTER.REP_CODE` → `Common.CO_Parameters` value whose name contains that code (`RepTransfer/PAL.DatabaseScripts.Office/StoredProcedures/002_SP_[Rep].[PR_GET_TRANSFER_DATA].sql#L24-L28`) | Base folder per delivery method: 0/1 → `REP_OFF_ROOT` on the office and `PR_REP_ROOT` on the vessel, 2 → `REP_AZURE_ROOT` (3 → `REP_REALM_ROOT`, not in use). The name match is loose but only one parameter has each name. On a vessel the transfer type is read from the hard-coded `PAL` database unless `IS_PRODUCT` = `N` (DATA-MSREP-OFFVSL). |
 | `IS_PRODUCT` | CO_Parameters | Selects `[PAL_REP]` database prefix. |
 | `PR_REP_ROOT`, `REP_PR_AZURE_IN`, `REP_PR_AZURE_SENT`, `REP_LOG` | CO_Parameters | Root, Azure in/sent folders, log path. |
 | Service address of RepAzure | `microservices.json` | For V2V download calls. |

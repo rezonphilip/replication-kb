@@ -23,7 +23,10 @@ Use this when asked to document a replication repository, add or improve KB arti
    If the repo has SQL deployment scripts (folders like `PAL.DatabaseScripts.Office/Vessel`), also run
    `python3 -I tools/extract_sql.py <work>/sql.json <script_root> [...]` and
    `python3 -I tools/gen_db_inventory.py <work>/sql.json <work>/extract.json <repo> .` → `inventory/<repo>-db.md`.
-   Stage Office scripts fully; for Vessel stage only files that differ in size or exist only there. Skip binaries and production data dumps.
+   Stage **both** Office and Vessel script folders fully (same-size files can still differ). Then run
+   `python3 -I tools/diff_office_vessel.py <staged_root> . <Project> [...]` → `inventory/<repo>-db-files.md` (every file with its Office/Vessel status),
+   and document every non-identical pair, however small, in a `60-data/<repo>-office-vessel-differences.md` article with citations to both copies.
+   Skip binaries and production data dumps.
 2. **Find the moving parts.** Grep for `BackgroundService`/`WorkerService`, `Task.Delay`, and orchestration classes. Services without a hosted service run only when called — say so.
 3. **Read the code paths that matter** (worker loops, queue handlers, controllers, the BL methods they call) and note exact line numbers as you go.
 4. **Write in this order:** platform/group overview → hand-written component articles for orchestrators, transport and gateways → generated-plus-summary articles for simple step services → flow articles with a "where is it stuck" table → config index → issue cards.
@@ -51,3 +54,5 @@ Write `reviews/<date>-<repo>.md` listing what was produced, what to review first
 - Queue procedures hold the operational truth: look for `DATEADD(... -N ...)` resets and `STATUS` transitions, and document each timer in the status-codes article.
 - Secrets may sit outside CO_Parameters (e.g. a credentials table read by a settings procedure). Read the settings procedures before writing "where is this key stored", and make presence scripts check every source.
 - Code that is commented out (e.g. a validation call) changes behaviour: check the call site, not only the procedure.
+- Office and Vessel scripts differ in ways that matter: Office binds sequences as column defaults while Vessel procedures pass `NEXT VALUE FOR` explicitly; vessel sequences start at the replication ID; whole seed scripts are commented out on one side and moved to `001_default_keys.sql`; parameter names in mapping rows differ (`REP_OFF_ROOT` vs `PR_REP_ROOT`). Diff every pair; never assume a vessel database looks like the office one.
+- Dropped or unused features (MS-REP: V2V / vessel-to-vessel, delivery method 3) stay in the code. Keep their identifiers so log lines are recognised, but mark them as dropped in every article that mentions them and never write troubleshooting steps for them. Ask the team which features are live before writing.

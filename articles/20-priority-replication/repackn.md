@@ -19,6 +19,8 @@ last_verified: 2026-11-11
 
 RepAckn builds and sends acknowledgements for received packets (`SendAckn`, `Destination-Handler`, `Response`) so the sender can stop resending. Missing acknowledgements make the sender resend after `ResendTimeInH`.
 
+> **V2V (vessel-to-vessel) is a dropped feature.** The V2V routes, procedures and message types mentioned in this article still exist in the code and database but are not in use; do not troubleshoot them. See DATA-MSREP-OFFVSL.
+
 ## Role in replication
 
 RepAckn is a Priority Replication receive-side step with no timer of its own: it runs only when called over HTTP (no hosted background service found in the project). Keywords: RepAckn, ackn, priority replication, receive side, sends acknowledgements.

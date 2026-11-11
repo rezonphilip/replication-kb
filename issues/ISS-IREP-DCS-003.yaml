@@ -1,0 +1,137 @@
+id: ISS-IREP-DCS-003
+title: 'sync+ export: packet transfer to RepIntegration/RepTransfer fails; resend'
+status: draft
+author: claude
+reviewed_by: ''
+last_verified: '2026-11-11'
+mechanism:
+- irep
+runs_on:
+- office
+- vessel
+components:
+- ExportDCS
+error_types:
+- http
+- transport
+related_docs:
+- CMP-EXPORTDCS
+- CMP-REPINTEGRATION
+- CMP-REPTRANSFER
+- FLW-IREP-EXPORT
+symptoms:
+- Packets are created and recorded (OutPacketHd) but do not leave the server.
+- Logs "Packet Transfer Failed for Vessel", "Error in transfering file", or "Transfer service not reachable for N consecutive attempts".
+- The export still reports success; delivery depends on the auto resend and the hourly directory resend.
+phrasings:
+- packet transfer failed
+- transfer service not reachable
+- TransferGeneral failed
+- dcs cannot send packet
+- packets created but not sent
+- resend failed
+- auto resend not working
+- directory resend not enabled
+- no valid resend files
+- file count does not match split count
+- resend file not found
+- irep packets stuck in outbox
+- sync+ to smartsync handoff failed
+- integration transfer general error
+- rep transfer down irep
+- resent limit reached
+- packet not uploaded irep
+- trasnfer faild
+- outpackethd saved but not delivered
+- packets not reaching vessel sync+
+signatures:
+- log_file: DcsServicePalLog_.txt
+  regex: \|Packet\ Transfer\ Failed\ for\ Vessel
+  source: ExportDCS/Mariapps.PAL.RepExportDCS/BL/Main/ExportBL.cs#L512
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DcsServicePalLog_.txt
+  regex: \|Error\ in\ transfering\ file\ with\ error\ message
+  source: ExportDCS/Mariapps.PAL.RepExportDCS/BL/Main/DcsTransportHandler.cs#L173
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DcsServicePalLog_.txt
+  regex: \|Transfer\ service\ not\ reachable\ for.*?consecutive\ attempts,\ stopping\ resend\ run\ at\ VesselObjectId.*?\.\ Remaining\ packets\ are\ retried\ on\ the\ next\ run
+  source: ExportDCS/Mariapps.PAL.RepExportDCS/BL/Main/ResendBL.cs#L141
+  level: Warning
+  visible_by_default: false
+  confidence: high
+- log_file: DcsServicePalLog_.txt
+  regex: \|Transfer\ service\ not\ reachable\ for.*?consecutive\ attempts,\ stopping\ directory\ resend\ run\ at\ VesselObjectId.*?\.\ Remaining\ files\ are\ retried\ on\ the\ next\ run
+  source: ExportDCS/Mariapps.PAL.RepExportDCS/BL/Main/ResendBL.cs#L323
+  level: Warning
+  visible_by_default: false
+  confidence: high
+- log_file: DcsServicePalLog_.txt
+  regex: \|Resend\ data\ failed\ \(.*?\)\ for\ VesselObjectId.*?,\ PacketNumber.*?,\ ReplicaType.*?and\ Out\ Packet\ Id
+  source: ExportDCS/Mariapps.PAL.RepExportDCS/BL/Main/ResendBL.cs#L127
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DcsServicePalLog_.txt
+  regex: \|Resend\ process\ failed\ \(.*?\)\ for\ PacketName
+  source: ExportDCS/Mariapps.PAL.RepExportDCS/BL/Main/ResendBL.cs#L185
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DcsServicePalLog_.txt
+  regex: \|Error\ in\ ResendFileData\ ,\ no\ file\ could\ be\ found\ for\ PacketName
+  source: ExportDCS/Mariapps.PAL.RepExportDCS/BL/Main/ResendBL.cs#L172
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DcsServicePalLog_.txt
+  regex: \|No\ valid\ resend\ files\ found\ for\ PacketName
+  source: ExportDCS/Mariapps.PAL.RepExportDCS/BL/Main/DcsTransportHandler.cs#L237
+  level: Warning
+  visible_by_default: false
+  confidence: high
+- log_file: DcsServicePalLog_.txt
+  regex: \|File\ count\ does\ not\ match\ split\ count\ for\ packet.*?in\ directory
+  source: ExportDCS/Mariapps.PAL.RepExportDCS/BL/Main/DcsTransportHandler.cs#L226
+  level: Warning
+  visible_by_default: false
+  confidence: high
+- log_file: DcsServicePalLog_.txt
+  regex: \|\ Directory\ resent\ is\ not\ enabled
+  source: ExportDCS/Mariapps.PAL.RepExportDCS/BL/Main/Common/CommonProcessBL.cs#L232
+  level: Warning
+  visible_by_default: false
+  confidence: high
+distinguishing_checks:
+- check: Is RepIntegration (Integration/TransferGeneral) reachable from the DCS server, and is RepTransfer running?
+  if_true: no -> restore those services (see ISS-INTEG-001, ISS-TRANSFER-001)
+  if_false: yes -> check the packet files exist with all splits
+- check: Has the packet reached REP_RESENT_LIMIT attempts?
+  if_true: yes -> automatic resend stopped; manual resend needed
+  if_false: no -> wait REP_RESENT_AWAIT_TIME_IN_MIN for the next attempt
+solutions:
+- id: SOL-IREP-DCS-003-A
+  title: Restore the transfer path
+  when: RepIntegration or RepTransfer down or unreachable.
+  steps:
+  - do: Start/restart RepIntegration and RepTransfer; check their logs.
+    who: support
+    requires_approval: true
+    verify: TransferGeneral calls succeed.
+  - do: Let auto resend and directory resend pick up the waiting packets.
+    who: support
+    requires_approval: false
+    verify: Packets delivered; resend log shows success.
+  escalate_if: The failure repeats after the fix, or the cause is not covered by the checks above.
+- id: SOL-IREP-DCS-003-B
+  title: Recreate missing split files
+  when: Resend finds no file or wrong split count.
+  steps:
+  - do: Dev decides whether to regenerate the packet; do not edit packet counters.
+    who: dev
+    requires_approval: true
+    verify: Receiver gets a complete packet.
+  escalate_if: The failure repeats after the fix, or the cause is not covered by the checks above.

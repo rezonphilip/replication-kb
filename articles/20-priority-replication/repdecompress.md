@@ -19,6 +19,8 @@ last_verified: 2026-11-11
 
 RepDecompress unzips a merged packet (`EXTRACT`, `Extract-Packet`) and records the packet's details (`PR_REP_SAVE_PACKET_DT_DATA`). Corrupt or incomplete zips fail here.
 
+> **V2V (vessel-to-vessel) is a dropped feature.** The V2V routes, procedures and message types mentioned in this article still exist in the code and database but are not in use; do not troubleshoot them. See DATA-MSREP-OFFVSL.
+
 ## Role in replication
 
 RepDecompress is a Priority Replication receive-side step with no timer of its own: it runs only when called over HTTP (no hosted background service found in the project). Keywords: RepDecompress, decompress, priority replication, receive side, unzips packets.

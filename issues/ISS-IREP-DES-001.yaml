@@ -1,0 +1,102 @@
+id: ISS-IREP-DES-001
+title: 'sync+ import: packet name does not match this environment (unique code, destination, type, counter, extension) or split incomplete'
+status: draft
+author: claude
+reviewed_by: ''
+last_verified: '2026-11-11'
+mechanism:
+- irep
+runs_on:
+- office
+- vessel
+components:
+- ImportDES
+error_types:
+- packet
+- config
+related_docs:
+- CMP-IMPORTDES
+- FLW-IREP-IMPORT
+symptoms:
+- Packets arrive in the inbox but are moved to the error folder or kept waiting.
+- Validation fails on unique code, destination, type, packet counter or the .tzst extension; or "Incomplete packet split".
+phrasings:
+- packet name invalid
+- unique code does not match
+- destination does not match vessel id
+- type does not match replication type
+- extension not tzst
+- incomplete packet split
+- expected splits not found
+- packet moved to error folder des
+- wrong packet received irep
+- packet for other vessel
+- packet validation failed
+- des validate failed
+- import not starting packet in inbox
+- split files missing
+- packet counter in name wrong
+- tzst invalid
+- pakcet name mismatch
+- packets from test env in prod
+- restored db packets rejected
+- smartsync+ packets rejected on ship
+signatures:
+- log_file: DesServiceLog_.txt
+  regex: Unique\ Code\ read\ from\ packet\ name\ does\ not\ matching\ with\ current\ Env\ Uniq\ Code
+  source: ImportDES/Mariapps.PAL.RepImportDES/BL/Validate/ImportValidateBL.cs#L357
+  level: Throw
+  visible_by_default: false
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: Destination\ read\ from\ packet\ name\ \ does\ not\ match\ current\ Environment\ Vessel\ Id
+  source: ImportDES/Mariapps.PAL.RepImportDES/BL/Validate/ImportValidateBL.cs#L360
+  level: Throw
+  visible_by_default: false
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: Type\ read\ from\ packet\ name\ does\ not\ match\ with\ Util\ ReplicationType
+  source: ImportDES/Mariapps.PAL.RepImportDES/BL/Validate/ImportValidateBL.cs#L363
+  level: Throw
+  visible_by_default: false
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: Packet\ counter\ read\ from\ packet\ name\ deos\ not\ match\ with\ valid\ packetCounter
+  source: ImportDES/Mariapps.PAL.RepImportDES/BL/Validate/ImportValidateBL.cs#L366
+  level: Throw
+  visible_by_default: false
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: Extension\ gotten\ from\ packet\ name\ does\ not\ match\ with\ valid\ extension\ \.tzst
+  source: ImportDES/Mariapps.PAL.RepImportDES/BL/Validate/ImportValidateBL.cs#L369
+  level: Throw
+  visible_by_default: false
+  confidence: high
+- log_file: DesServiceLog_.txt
+  regex: \|Incomplete\ packet\ split\ for\ vessel.*?,\ packet.*?,\ file.*?\.\ Expected\ splits.*?,\ found.*?,\ last\ cache\ packet.*?,\ cache\ push\ status
+  source: ImportDES/Mariapps.PAL.RepImportDES/BL/Validate/ImportValidateBL.cs#L406
+  level: Warning
+  visible_by_default: false
+  confidence: high
+distinguishing_checks:
+- check: Split the packet file name into its parts and compare unique code and destination with this environment (presence/identity check).
+  if_true: mismatch -> packet routed to the wrong site or environment identity changed
+  if_false: match -> check counter and split parts
+- check: Count split files for the packet in the inbox.
+  if_true: fewer than expected -> transfer still running or incomplete; wait or request resend
+  if_false: all present -> name/type validation problem
+solutions:
+- id: SOL-IREP-DES-001-A
+  title: Route or resend correctly
+  when: Packet belongs elsewhere or is incomplete.
+  steps:
+  - do: Do not import packets for another environment; move them out of the inbox after recording names.
+    who: support
+    requires_approval: true
+    verify: Inbox only holds valid packets.
+  - do: Request resend from the sender for incomplete packets.
+    who: dev
+    requires_approval: true
+    verify: Complete packet validates.
+  escalate_if: The failure repeats after the fix, or the cause is not covered by the checks above.
+notes: These messages are thrown exceptions; the visible log line is the caller catch, so search by the text.

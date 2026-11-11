@@ -1,0 +1,129 @@
+id: ISS-IREP-CDT-002
+title: 'sync+ export: export query in REP_EXPORT_VESSEL_QUERY missing, invalid or skipped'
+status: draft
+author: claude
+reviewed_by: ''
+last_verified: '2026-11-11'
+mechanism:
+- irep
+runs_on:
+- office
+- vessel
+components:
+- ExportCDT
+error_types:
+- dataapply
+- config
+related_docs:
+- CMP-EXPORTCDT
+- FLW-IREP-EXPORT
+- DATA-IREP
+symptoms:
+- Tables are skipped every cycle with "Query not found, skipping", "TableId 0, skipping" or "MaxId 0, skipping".
+- SQL errors such as "multi-part identifier could not be bound" or "invalid column name" for the vessel export query.
+- Changes reach REP_RECORD_SYNC but no rows are written for vessels (record vessel sync).
+phrasings:
+- export query missing
+- query not found skipping
+- REP_EXPORT_VESSEL_QUERY wrong
+- vessel query error
+- multi-part identifier could not be bound
+- invalid column in export query
+- TableId 0 skipping
+- MaxId 0 skipping
+- off export query wrong
+- vsl export query wrong
+- delete query missing
+- deleted records not replicating sync+
+- record vessel sync not filled
+- irep vessel data not routed
+- table not going to vessel
+- sync+ query config error
+- after adding table to irep nothing sent
+- export query typo
+- exprot query mising
+- wrong alias in export query
+- routing query fails for vessel
+signatures:
+- log_file: CDTServiceLog_.txt
+  regex: The multi-part identifier "(?<column>[^"]+)" could not be bound
+  source: ExportCDT/Mariapps.PAL.RepExportCDT/Logs/Export_CDT_20240415.txt#L78
+  level: Error
+  visible_by_default: true
+  confidence: high
+  note: SQL Server message text seen in a real 2024 CDT log; it follows the code template in the same line.
+- log_file: CDTServiceLog_.txt
+  regex: 'Query\ not\ found,\ skipping\ \[REP\]\.\[REP_EXPORT_VESSEL_QUERY\]\ \ ID:.*?,\ TableId:.*?,\ ReplicaTypeId:'
+  source: ExportCDT/Mariapps.PAL.RepExportCDT/BL/DBConnectionAggregator.cs#L436
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: CDTServiceLog_.txt
+  regex: 'TableId\ 0,\ skipping\ \[REP\]\.\[REP_EXPORT_VESSEL_QUERY\]\ Id:.*?,\ TableId:.*?,\ ReplicaTypeId:'
+  source: ExportCDT/Mariapps.PAL.RepExportCDT/BL/DBConnectionAggregator.cs#L442
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: CDTServiceLog_.txt
+  regex: 'MaxId\ 0,\ skipping\ \[REP\]\.\[REP_EXPORT_VESSEL_QUERY\]\ Id:.*?,\ TableId:.*?,\ ReplicaTypeId:'
+  source: ExportCDT/Mariapps.PAL.RepExportCDT/BL/DBConnectionAggregator.cs#L448
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: CDTServiceLog_.txt
+  regex: 'Query\ not\ found,\ skipping\ \[REP\]\.\[REP_EXPORT_VESSEL_QUERY\],\ Id:.*?,\ TableId:.*?,\ ReplicaTypeId:'
+  source: ExportCDT/Mariapps.PAL.RepExportCDT/BL/DBConnectionAggregator.cs#L598
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: CDTServiceLog_.txt
+  regex: 'TableId\ 0,\ skipping\ \[REP\]\.\[REP_EXPORT_VESSEL_QUERY\],\ Id:.*?,\ TableId:.*?,\ ReplicaTypeId:'
+  source: ExportCDT/Mariapps.PAL.RepExportCDT/BL/DBConnectionAggregator.cs#L604
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: CDTServiceLog_.txt
+  regex: 'MaxId\ 0,\ skipping\ \[REP\]\.\[REP_EXPORT_VESSEL_QUERY\],\ Id:.*?,\ TableId:.*?,\ ReplicaTypeId:'
+  source: ExportCDT/Mariapps.PAL.RepExportCDT/BL/DBConnectionAggregator.cs#L610
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: CDTServiceLog_.txt
+  regex: ReplicaTypeId:.*?query\ missing\ in\ dataset
+  source: ExportCDT/Mariapps.PAL.RepExportCDT/BL/DBConnectionAggregator.cs#L383
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: CDTServiceLog_.txt
+  regex: ReplicaTypeId:.*?delete\ query\ missing\ in\ dataset
+  source: ExportCDT/Mariapps.PAL.RepExportCDT/BL/DBConnectionAggregator.cs#L542
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: CDTServiceLog_.txt
+  regex: 'ReplicaTypeId:.*?,\ Error\ in\ GetQueryToInsertRecordVslSync:'
+  source: ExportCDT/Mariapps.PAL.RepExportCDT/BL/DBConnectionAggregator.cs#L403
+  level: Error
+  visible_by_default: true
+  confidence: high
+distinguishing_checks:
+- check: 'Look up the table id from the log in REP_EXPORT_VESSEL_QUERY (read-only): are the office/vessel insert and delete query columns filled?'
+  if_true: empty -> the query row is incomplete
+  if_false: filled -> run the query text in a test session (read-only SELECT part) to see the SQL error
+- check: Is the message "MaxId 0"?
+  if_true: MaxId 0 -> no new changes were captured; usually not an error unless changes are expected (see ISS-IREP-CDT-001)
+  if_false: otherwise -> query/config problem
+solutions:
+- id: SOL-IREP-CDT-002-A
+  title: Correct the export query row
+  when: Query missing or invalid.
+  steps:
+  - do: Record the REP_EXPORT_VESSEL_QUERY id, table id and SQL text.
+    who: support
+    requires_approval: false
+    verify: Details recorded.
+  - do: Dev corrects the query through the deployment script for the version and clears the CDT cache (ClearCacheEnabled or cache-clear route).
+    who: dev
+    requires_approval: true
+    verify: Next cycle logs no skip/SQL error for the table.
+  escalate_if: The failure repeats after the fix, or the cause is not covered by the checks above.

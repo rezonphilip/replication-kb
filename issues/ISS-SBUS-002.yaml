@@ -30,8 +30,6 @@ phrasings:
   - new vessel cannot receive
   - REP_SERVICEBUS_CONNECTION_STRING empty
   - service bus connection string and basic info is not found
-  - V2V queue name missing
-  - vessel to vessel notifications fail
   - import item aborted queue name empty
   - general notification not sent
   - credentials not fetched
@@ -49,6 +47,7 @@ signatures:
     confidence: high
   - log_file: SbusLog_.txt
     regex: 'Queue name (is not found|not found found in config|not found in memory store for V2V data)'
+    note: "The V2V variant of this message belongs to the dropped V2V feature."
     source: RepSbus/MariApps.PAL.Rep.Sbus.Service/BL/CommonDataConduit.cs#L111
     confidence: high
   - log_file: SbusLog_.txt
@@ -72,6 +71,9 @@ distinguishing_checks:
     script: catalog/scripts/sbus-settings-presence.sql
     if_true: "rows missing → this issue"
     if_false: "rows exist → check queue creation messages / permissions"
+  - check: "On a vessel: does REP.REP_PR_SUBSCRIBER_LIST have a row for the vessel's own ID, and does CO_Parameters REP_SOURCE_UNIQUE_ID hold that ID (not -999)? The Vessel deployment script creates both from REP_VESSEL_INFRA and an active CO_Vessel_Register row (DATA-MSREP-OFFVSL)."
+    if_true: "vessel identity is set up → look at credentials/queue creation"
+    if_false: "vessel identity missing → re-run the vessel deployment scripts after REP_VESSEL_INFRA and CO_Vessel_Register are correct (dev, approval required)"
 
 solutions:
   - id: SOL-SBUS-002-A

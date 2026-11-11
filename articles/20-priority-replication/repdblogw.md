@@ -19,6 +19,8 @@ last_verified: 2026-11-11
 
 RepDBLogW is an HTTP front door to the replication database. Priority Replication services write logs and packet state through it, and the SmartSync transport services (RepSbus, RepAzure, RepAzureRes) load their settings, credentials, queue names and download/upload queues through it. It has no timer. If RepDBLogW is down or cannot reach SQL Server, the transport cannot even load its configuration, so the failure shows up first in *other* services' logs.
 
+> **V2V (vessel-to-vessel) is a dropped feature.** The V2V routes, procedures and message types mentioned in this article still exist in the code and database but are not in use; do not troubleshoot them. See DATA-MSREP-OFFVSL.
+
 ## Role in replication
 
 RepDBLogW is part of the Priority Replication core and, in the code, also the settings source for SmartSync. Keywords: DBlogW, database gateway, log write, packet log, settings, credentials, Rep2i, Rep2x.

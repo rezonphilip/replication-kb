@@ -14,7 +14,9 @@ last_verified: 2026-11-11
 
 # MS-REP database — how the scripts are organised and what lives where
 
-The MS-REP database objects are deployed from two script projects: `RepIntegration/PAL.DatabaseScripts.{Office,Vessel}` (Priority Replication, queues, logs, V2V) and `RepTransfer/PAL.DatabaseScripts.{Office,Vessel}` (transfer/SmartSync settings, upload/download records). Almost everything lives in the `REP` schema; parameters live in `Common.CO_Parameters`. Full object list: `inventory/ms-rep-db.md`.
+The MS-REP database objects are deployed from two script projects: `RepIntegration/PAL.DatabaseScripts.{Office,Vessel}` (Priority Replication, queues, logs, and the dropped V2V feature) and `RepTransfer/PAL.DatabaseScripts.{Office,Vessel}` (transfer/SmartSync settings, upload/download records). Almost everything lives in the `REP` schema; parameters live in `Common.CO_Parameters`. Full object list: `inventory/ms-rep-db.md`.
+
+> **V2V (vessel-to-vessel) is a dropped feature.** The V2V routes, procedures and message types mentioned in this article still exist in the code and database but are not in use; do not troubleshoot them. See DATA-MSREP-OFFVSL.
 
 ## Script layout and deployment order
 
@@ -35,7 +37,7 @@ Each project has numbered folders that run in order; every script is written to 
 
 The Office and Vessel projects create mostly the same objects, but some tables and procedures differ, so do not assume a vessel database looks like the office one. Keywords: office vs vessel, schema difference, vessel database.
 
-Files that differ in size between Office and Vessel (RepIntegration) include `014_TABLE_PR_LOG_DB`, `017_TABLE_REP_PRIORITY_TABLE_SETTINGS`, `027_TABLE_PR_CHANNEL_SETTINGS`, `039_VALUES_PR_CO_PARAMETERS`, `041_VALUE_PR_CHANNEL_SETTINGS`, `072_TABLE_REP_PR_STORAGE_CREDENTIALS`, and procedures `GET_V2V_PACKET_COUNTER`, `REP_MOV_TRANSFER_QUEUE_HIST`, `SAVE_REP_TRANSFER_QUEUE`. Vessel-only procedures include `REP_GETDOWNLOADS_TABLEID` (`RepIntegration/PAL.DatabaseScripts.Vessel/StoredProcedures/037_REP_GETDOWNLOADS_TABLEID.sql`). A line-by-line comparison has not been done yet (open question Q13).
+Every Office/Vessel pair has now been compared line by line; the full list, and which differences matter (ID defaults vs explicit IDs, vessel sequence ranges, delivery-folder parameter names, the hard-coded `PAL` database in the vessel transfer-type lookup, channels not seeded on the vessel), is in DATA-MSREP-OFFVSL.
 
 One concrete difference: `REP.PR_GET_TRANSFER_DATA` on the vessel reads the vessel's delivery method from `[PAL].[REP].[REP_VESSEL_INFRA]` unless `IS_PRODUCT` = `N`, while the office version always uses the `$__PALREP__$` database placeholder (`RepTransfer/PAL.DatabaseScripts.Vessel/StoredProcedures/002_SP_[Rep].[PR_GET_TRANSFER_DATA].sql#L11-L23` vs `RepTransfer/PAL.DatabaseScripts.Office/StoredProcedures/002_SP_[Rep].[PR_GET_TRANSFER_DATA].sql#L11-L19`).
 
@@ -48,10 +50,10 @@ The tables fall into settings, export state, import state, transport queues, and
 | Settings | `REP_PRIORITY_TABLE_SETTINGS`, `PR_CHANNEL_SETTINGS`, `PR_PRIORITY_CHANNEL_FLOW_SETTINGS`, `PR_PRIORITY_QUEUE_SETTINGS`, `Common.PR_REP_Vessel_Settings`, `PR_PACKET_COUNTER_SETTINGS`, `PR_SERVICE_DETAILS`, `COMMUNICATION_TYPE`, `REP_TYPE_TRANSFER_MEDIUM`, `PR_REP_TRANSFER_MASTER`, `PR_CO_PARAMETERS` | DATA-MSREP-SETTINGS |
 | Export state | `PR_TRACKCHANGE_RECORDS`, `PR_TRACKCHANGE_VESSELS`, `PR_REP_OUT_Packet_HD`, `PR_REP_OUT_PACKET_DT`, `PR_REP_OUT_FILE_HD/DT`, `PR_Zip_Splits`, `REP_PR_PACKET_SOURCE(_DETAILS)` | DATA-MSREP-STATUS |
 | Import state | `PR_REP_IN_Packet_HD`, `PR_REP_IN_Packet_DT`, `PR_REP_IMPORT_QUEUE(_DT, _HISTORY)`, `PR_REP_Missing_Packets`, `PR_SAVE_DATA_RECORDS`, `REP_ACKN` | DATA-MSREP-STATUS |
-| Resend | `PR_RESEND_LOG`, `PR_RESEND_QUEUE` (RepTransfer scripts), `V2V_RESEND_LOG` | DATA-MSREP-RESEND |
+| Resend | `PR_RESEND_LOG`, `PR_RESEND_QUEUE` (RepTransfer scripts), `V2V_RESEND_LOG` (V2V, dropped) | DATA-MSREP-RESEND |
 | Transport queues | `REP_TRANSFER_QUEUE(_HISTORY)`, `REP_AZURE_RES_UPLOAD(_HISTORY)`, `REP_Downloads`, `REP_DOWNLOADS_HISTORY`, `REP_UPLOAD_FILE`, `REP_BULK_TRANSFER_STATUS` | DATA-MSREP-STATUS |
 | Service Bus / notifications | `REP_SERVICEBUS_CREDENTIALS`, `REP_SERVICE_BUS_MASTER_SETTINGS`, `REP_SERVICE_BUS_TRANSACTION_SETTINGS`, `REP_SBUS_NOTIFICATION`, `REP_TABLE_NOTIF_QUEUE`, `PR_REP_MESSAGE_NOTIF_QUEUE`, `PR_REPLICATED_CHAT_QUEUE` | DATA-MSREP-SETTINGS |
-| V2V | `REP_PR_SUBSCRIBER_LIST(_DT)`, `REP_V2V_MASTER_LOG(_DETAILS)`, `V2V_STATUS_HIS`, `REP_PR_STORAGE_CREDENTIALS` | — (not yet written) |
+| Subscribers and V2V | `REP_PR_SUBSCRIBER_LIST(_DT)` (queue names, still used), `REP_PR_STORAGE_CREDENTIALS`; V2V only: `REP_V2V_MASTER_LOG(_DETAILS)`, `V2V_STATUS_HIS` | V2V is a dropped feature — no article planned |
 | Logs | `PR_LOG_DB`, `PR_REP_LOG`, `REP_NOTIFICATION_LOG`, `REP_SERVICE_OPERATION_STATUS` | — |
 
 ## Where secrets are stored

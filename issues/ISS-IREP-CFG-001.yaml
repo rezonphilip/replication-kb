@@ -1,0 +1,147 @@
+id: ISS-IREP-CFG-001
+title: sync+ service cannot get its database connection settings (ComINT / services.json)
+status: draft
+author: claude
+reviewed_by: ''
+last_verified: '2026-11-11'
+mechanism:
+- irep
+runs_on:
+- office
+- vessel
+components:
+- ComINT
+- ExportCDT
+- ImportDSC
+- ImportRBP
+error_types:
+- config
+- http
+related_docs:
+- CMP-COMINT
+- PLT-IREP
+- CFG-IREP
+symptoms:
+- A sync+ service logs "not able to fetch database connectionString configurations" or "Invalid connectionString settings" every cycle.
+- '"Service ComINT_Utility not found on services.json" or a ComINT HTTP exception appears.'
+- All sync+ work for one replica type stops at once.
+phrasings:
+- comint not reachable
+- cannot fetch connection string
+- connectionstring configurations not fetched
+- invalid connectionString settings
+- ComINT_Utility not found on services.json
+- services.json missing entry
+- GetDbConfigurationDetails failed
+- config gateway down
+- irep all services failing config
+- sync+ db config missing
+- replica type not configured
+- connection settings null
+- Connectionstring settings not found
+- after server move irep stopped
+- comint 500
+- comint timeout
+- com int service down
+- conection string not found
+- no replica type config
+- smartsync+ cannot connect to db
+- GetConnectionStrings failed
+signatures:
+- log_file: CDTServiceLog_.txt
+  regex: 'Processing\ failed,\ not\ able\ to\ fetch\ database\ connectionString\ configurations\ for\ ReplicaTypeId:'
+  source: ExportCDT/Mariapps.PAL.RepExportCDT/BL/RepExportCDTBL.cs#L98
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: CDTServiceLog_.txt
+  regex: 'Invalid\ connectionString\ settings,\ ReplicaTypeId:.*?,\ PrimaryDB:.*?,\ ReadOnlyDB:'
+  source: ExportCDT/Mariapps.PAL.RepExportCDT/BL/RepExportCDTBL.cs#L163
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: CDTServiceLog_.txt
+  regex: Processing\ failed,\ not\ able\ to\ fetch\ database\ connectionString\ configurations
+  source: ExportCDT/Mariapps.PAL.RepExportCDT/BL/RepExportCDTBL.cs#L253
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: CDTServiceLog_.txt
+  regex: Service\ RepExportCDT_Utility\ not\ found\ on\ services\.json
+  source: ExportCDT/Mariapps.PAL.RepExportCDT/ServiceClient/ComINTServiceClient.cs#L51
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DscServiceLog_.txt
+  regex: Service\ ComINT_Utility\ not\ found\ on\ services\.json
+  source: ImportDSC/Mariapps.PAL.RepImportDSC/ServiceClient/ComINTServiceClient.cs#L41
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: RbpServiceLog_.txt
+  regex: Service\ ComINT_Utility\ not\ found\ on\ services\.json
+  source: ImportRBP/Mariapps.PAL.RepImportRBP/ServiceClient/ComINTServiceClient.cs#L46
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DscServiceLog_.txt
+  regex: Connectionstring\ settings\ not\ found
+  source: ImportDSC/Mariapps.PAL.RepImportDSC/BL/RepImportDSCBL.cs#L137
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: DscServiceLog_.txt
+  regex: 'Connectionstring\ settings\ not\ found\ for\ ReplicaTypeId:'
+  source: ImportDSC/Mariapps.PAL.RepImportDSC/BL/RepImportDSCBL.cs#L147
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: RbpServiceLog_.txt
+  regex: 'Processing\ failed,\ not\ able\ to\ fetch\ database\ connectionString\ configurations\ for\ ReplicaTypeId:'
+  source: ImportRBP/Mariapps.PAL.RepImportRBP/BL/RepImportRBPBL.cs#L84
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: RbpServiceLog_.txt
+  regex: 'Invalid\ connectionString\ settings,\ ReplicaTypeId:.*?,\ PrimaryDB:.*?,\ ReadOnlyDB:'
+  source: ImportRBP/Mariapps.PAL.RepImportRBP/BL/RepImportRBPBL.cs#L184
+  level: Error
+  visible_by_default: true
+  confidence: high
+- log_file: RbpServiceLog_.txt
+  regex: GetConnectionStrings\ failed
+  source: ImportRBP/Mariapps.PAL.RepImportRBP.DAL/Repository/ReadConnectionStringFromDB.cs#L46
+  level: Error
+  visible_by_default: true
+  confidence: high
+distinguishing_checks:
+- check: Call ComINT GetDbConfigurationDetails health/route from the server running the failing service (do not paste the response; it contains connection strings).
+  if_true: unreachable or error -> fix ComINT (IIS site, app pool, its own DB access)
+  if_false: returns data -> check the replica type id exists and its connection strings are filled (presence only)
+- check: Open the failing service services.json and check the ComINT entry (base address and endpoint names only).
+  if_true: missing/wrong -> restore from deployment
+  if_false: present -> ComINT side
+solutions:
+- id: SOL-IREP-CFG-001-A
+  title: Restore ComINT or its endpoint configuration
+  when: Gateway unreachable or misconfigured.
+  steps:
+  - do: Start/restart the ComINT site and check ComINTServiceLog_.txt.
+    who: support
+    requires_approval: true
+    verify: Route answers.
+  - do: Correct services.json entries of the calling service from the deployment template.
+    who: dev
+    requires_approval: true
+    verify: Calling service logs no configuration error on next cycle.
+  escalate_if: The failure repeats after the fix, or the cause is not covered by the checks above.
+- id: SOL-IREP-CFG-001-B
+  title: Complete the replica type configuration
+  when: ComINT answers but the replica type has no or empty connection strings.
+  steps:
+  - do: Dev/DBA fills the replica configuration through the documented procedure; never paste values into tickets.
+    who: dev
+    requires_approval: true
+    verify: Presence script shows PRESENT for each database.
+  escalate_if: The failure repeats after the fix, or the cause is not covered by the checks above.
+notes: 'Security: ComINT returns connection strings over HTTP, and some services log the connection string in "Invalid connectionString settings" — treat those logs as sensitive.'
