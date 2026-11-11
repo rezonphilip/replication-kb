@@ -1,0 +1,23 @@
+id: SCR-VESSEL-DELIVERY-METHOD
+title: Vessel delivery method (transfer type)
+file: vessel-delivery-method.sql
+read_only: true
+runs_on: [office, vessel]
+parameters:
+  - name: vessel_object_id
+    type: bigint
+    from: dashboard vessel context
+used_by: [ISS-TRANSFER-001]
+result_rules:
+  - when: no rows
+    means: Vessel has no delivery method -> RepTransfer logs "Transfer Type could not be found" (ISS-TRANSFER-001, solution A)
+  - when: TRANSFER_TYPE is null or empty
+    means: same as no rows
+  - when: TRANSFER_TYPE = 2
+    means: Azure / SmartSync delivery; packets go to OUT/PR/OUTBOX/<vessel>
+  - when: TRANSFER_TYPE in (0, 1)
+    means: Non-Azure medium folder delivery (meaning of 0 vs 1 not determined from code)
+sources:
+  - RepTransfer/MariApps.PAL.Rep.Transfer.DAL/TransferRepository.cs#L94-L125
+  - RepTransfer/MariApps.PAL.Rep.Transfer.Service/BL/TransferBL.cs#L50-L140
+status: draft

@@ -1,0 +1,28 @@
+id: SCR-SBUS-SETTINGS-PRESENCE
+title: Service Bus parameters present (names only)
+file: sbus-settings-presence.sql
+read_only: true
+returns_secrets: false
+runs_on:
+- office
+- vessel
+parameters: []
+used_by:
+- ISS-SBUS-002
+result_rules:
+- when: REP_SERVICEBUS_CONNECTION_STRING is EMPTY in CO_Parameters but PRESENT in REP_SERVICEBUS_CREDENTIALS
+  means: Normal - the services read the secret from REP_SERVICEBUS_CREDENTIALS (DATA-MSREP-OVERVIEW).
+- when: REP_SERVICEBUS_CONNECTION_STRING is MISSING or EMPTY in REP_SERVICEBUS_CREDENTIALS
+  means: Secret not configured where the settings procedures read it -> ISS-SBUS-002
+- when: REP_SERVICEBUS_CONNECTION_STRING is MISSING or EMPTY in both CO_Parameters and REP_SERVICEBUS_CREDENTIALS
+  means: RepSbus logs "service bus connection string and basic info is not found" -> ISS-SBUS-002
+- when: REP_INTERGRATION_* MISSING or EMPTY
+  means: RepSbus cannot call RepIntegration
+- when: REP_PR_SUBSCRIBER_LIST has no rows, or EMPTY_QUEUE_NAMES > 0
+  means: Queue names missing -> RepSbus logs "Queue name is not found" (ISS-SBUS-002).
+sources:
+- inventory/ms-rep.md (RepSbus, RepDBLogW parameters)
+- RepTransfer/PAL.DatabaseScripts.Office/StoredProcedures/009_SP_[REP].[REP_GET_AZURE_SETTINGS].sql#L7-L9
+- RepTransfer/PAL.DatabaseScripts.Office/StoredProcedures/010_SP_[REP].[REP_GET_SBUS_SETTINGS].sql#L7-L9
+- RepIntegration/PAL.DatabaseScripts.Office/StoredProcedures/044_[REP].[REP_GET_QUEUE_NAME].sql#L6-L16
+status: draft

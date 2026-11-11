@@ -1,0 +1,40 @@
+id: ISS-<AREA>-<NNN>                 # e.g. ISS-SBUS-001
+title: <short, how an engineer would name it>
+status: draft                        # draft | needs-review | approved
+author: claude
+reviewed_by: ""
+last_verified: YYYY-MM-DD
+mechanism: [smartsync]
+runs_on: [vessel]
+components: [RepSbus]
+error_types: []
+related_docs: [CMP-REPSBUS]
+
+symptoms:                            # as users report them
+  - ...
+
+phrasings:                           # 20-50 ways people describe it; include typos, ship/office wording
+  - ...
+
+signatures:                          # regexes from real log templates only
+  - log_file: SbusLog_.txt
+    regex: '...'
+    source: RepSbus/.../WorkerService.cs#L109
+    confidence: high                 # high = this message alone identifies the issue
+
+distinguishing_checks:               # tell this apart from look-alikes
+  - check: ...
+    script: catalog/scripts/<name>.sql   # optional, read-only
+    if_true: this issue
+    if_false: see ISS-...
+
+solutions:
+  - id: SOL-<ISSUE>-A
+    title: ...
+    when: ...
+    steps:
+      - do: ...
+        who: support | vessel IT | dev
+        requires_approval: false
+        verify: ...
+    escalate_if: ...

@@ -1,0 +1,7 @@
+# Allowed label values for front-matter and issue cards. Add here before using a new value.
+type: [overview, inventory, component, flow, config, issue, script, reference]
+mechanism: [smartsync, priority-replication, irep, task-scheduler]
+group: [smartsync-transport, transfer-adapter, orchestrator, pr-core, pr-send, pr-receive, data]
+runs_on: [office, vessel]
+direction: [office-to-vessel, vessel-to-office, vessel-to-vessel, both]
+status: [draft, needs-review, approved]

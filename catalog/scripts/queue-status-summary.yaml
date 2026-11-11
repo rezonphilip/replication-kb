@@ -1,0 +1,28 @@
+id: SCR-QUEUE-STATUS-SUMMARY
+title: MS-REP queue status summary (all queues)
+file: queue-status-summary.sql
+read_only: true
+returns_secrets: false
+runs_on: [office, vessel]
+parameters:
+  - name: vessel_object_id
+    type: bigint
+    nullable: true
+    from: dashboard vessel context (NULL = all vessels)
+used_by: [ISS-INTEG-001, ISS-INTEG-003, ISS-PR-001, ISS-AZURE-001, ISS-AZURERES-001]
+result_rules:
+  - when: TRACKCHANGE_VESSELS has PND rows and OLDEST is hours old, and OUT_PACKET_HD has no recent rows
+    means: Export is not picking records - check RepIntegration loop and settings (ISS-INTEG-001, ISS-INTEG-002, DATA-MSREP-SETTINGS observation Q16).
+  - when: OUT_PACKET_HD has ERR rows
+    means: Packets failing before/at transfer; retried up to 5 times every 30 minutes.
+  - when: TRANSFER_QUEUE has status 7 rows
+    means: Transfer gave up after retries; see RepTransfer / transport logs.
+  - when: AZURE_RES_UPLOAD rows not 0 with OLDEST older than an hour
+    means: Upload stuck or slow link (ISS-AZURERES-001).
+  - when: DOWNLOADS rows in 1/2/5 with OLDEST older than an hour
+    means: Download lane stuck (ISS-AZURE-001); rows are reset automatically after 15-30 minutes, so long-lived rows mean repeated failure.
+  - when: IMPORT_QUEUE has many rows in one status and MISSING_PACKETS has MSG/ERR rows
+    means: Imports waiting for a missing packet (ISS-PR-001).
+sources:
+  - articles/60-data/ms-rep-status-codes.md
+status: draft

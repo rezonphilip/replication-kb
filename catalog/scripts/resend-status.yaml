@@ -1,0 +1,24 @@
+id: SCR-RESEND-STATUS
+title: Resend history and manual resend requests (sender side)
+file: resend-status.sql
+read_only: true
+returns_secrets: false
+runs_on: [office, vessel]
+parameters:
+  - name: vessel_object_id
+    type: bigint
+    from: dashboard vessel context
+used_by: [ISS-PR-002]
+result_rules:
+  - when: RESEND_LIMIT = LIMIT_REACHED for a packet the receiver still reports missing
+    means: Automatic resend has given up (5 resends). Only a manual PR_RESEND_QUEUE request will resend it (ISS-PR-002, approval required).
+  - when: LAST_RESEND_ON within the last 30 minutes
+    means: Normal; the next resend of this packet cannot happen before 30 minutes have passed.
+  - when: PACKET_STATUS = ERR and no resend log row
+    means: Packet failed before transfer; it is retried by PR_PACKET_TRANSFER_INFO up to 5 times (DATA-MSREP-STATUS).
+  - when: second result has STATUS = 0 rows
+    means: Manual resend requests waiting for the next resend run.
+sources:
+  - RepIntegration/PAL.DatabaseScripts.Office/StoredProcedures/112_PRIORITY_RESEND_DATA.sql#L14-L69
+  - RepIntegration/PAL.DatabaseScripts.Office/StoredProcedures/140_PR_PACKET_TRANSFER_INFO.sql#L8-L35
+status: draft

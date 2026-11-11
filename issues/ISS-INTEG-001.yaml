@@ -1,0 +1,84 @@
+id: ISS-INTEG-001
+title: "Nothing replicates — RepIntegration loop disabled, failing or stuck \"already running\""
+status: draft
+author: claude
+reviewed_by: ""
+last_verified: 2026-11-11
+mechanism: [priority-replication, irep]
+runs_on: [office, vessel]
+components: [RepIntegration]
+error_types: []
+related_docs: [CMP-REPINTEGRATION, FLW-PR-EXPORT, FLW-PR-IMPORT]
+
+symptoms:
+  - All MS-REP services answer TestService, but no export, import or transfer happens.
+  - Integration log shows the same "already running" message every cycle.
+
+phrasings:
+  - replication completely stopped
+  - nothing is replicating
+  - all services running but no replication
+  - integration service not doing anything
+  - RepIntegration idle
+  - main processes not started
+  - InitiateOnInterval is false
+  - export process is already running
+  - export stuck already running
+  - transfer queue already running
+  - work service failed
+  - integration worker crashed
+  - export disabled by configuration
+  - import disabled by configuration
+  - after upgrade replication not starting
+  - after config change nothing replicates
+  - no packets created since yesterday
+  - priority replication stopped on vessel
+  - priority replication stopped at office
+  - need restart integration service to replicate
+  - integration service log only shows already running
+  - queue process not starting
+
+signatures:
+  - log_file: IntegrationServiceLog_.txt
+    regex: 'Integration main processes not started due to InitiateOnInterval is false'
+    source: RepIntegration/MariApps.PAL.Rep.Integration.Service/WorkerService.cs#L93
+    confidence: high
+  - log_file: IntegrationServiceLog_.txt
+    regex: '\| Work service failed'
+    source: RepIntegration/MariApps.PAL.Rep.Integration.Service/WorkerService.cs#L105
+    confidence: medium
+  - log_file: IntegrationServiceLog_.txt
+    regex: 'Export process is already running'
+    source: RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/QueueHandler/IntegrationQueueProcessBL.cs#L109
+    confidence: low
+    note: "Normal for short periods; a problem only if continuous for close to 2 hours (auto-clear time)."
+  - log_file: IntegrationServiceLog_.txt
+    regex: '(Export|Import) process is disabled by configuration'
+    source: RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/QueueHandler/IntegrationQueueProcessBL.cs#L86
+    confidence: high
+
+distinguishing_checks:
+  - check: "Is the RepIntegration Windows service running and is the log being written every interval?"
+    if_true: "loop runs → read which message repeats"
+    if_false: "service stopped → start it (solution A step 3)"
+  - check: "Are `EnableWorkerService`, `InitiateOnInterval`, `InvokeNewExport`, `InvokeNewImport` set as intended for this site?"
+    if_true: "config fine → stuck flag or failing step"
+    if_false: "config disables the loop → solution A"
+
+solutions:
+  - id: SOL-INTEG-001-A
+    title: "Re-enable or restart the orchestrator"
+    steps:
+      - do: "Read the last 2 hours of `IntegrationServiceLog_` and note which message repeats."
+        who: support
+        requires_approval: false
+        verify: "Repeating message identified."
+      - do: "If a switch is off unintentionally, dev/ops correct `appsettings.json` (keys above)."
+        who: dev
+        requires_approval: true
+        verify: "Log no longer shows \"disabled\"/\"not started\"."
+      - do: "Restart RepIntegration (clears all in-memory \"already running\" flags)."
+        who: support
+        requires_approval: true
+        verify: "Next cycle logs \"Export queue process has been started\" and work progresses."
+    escalate_if: "The Work service failed message repeats after restart — capture the exception for dev."

@@ -1,0 +1,68 @@
+id: ISS-PR-002
+title: "Automatic resend has given up on a packet (5-resend limit reached)"
+status: draft
+author: claude
+reviewed_by: ""
+last_verified: 2026-11-11
+mechanism: [priority-replication]
+runs_on: [office, vessel]
+components: [RepIntegration, RepTransfer]
+error_types: []
+related_docs: [DATA-MSREP-RESEND, ISS-PR-001]
+
+symptoms:
+  - "The receiver keeps reporting the same packet as missing for days."
+  - "The sender's resend log shows the packet resent 5 times or more."
+  - "Priority resend runs but reports nothing to resend."
+
+phrasings:
+  - resend not happening
+  - packet resent many times still missing
+  - resend limit reached
+  - max resend exceeded
+  - resend count 5
+  - priority resend not picking packet
+  - no priority resend packets found
+  - missing packet never resent
+  - old missing packet stuck
+  - resend stopped after few tries
+  - need manual resend
+  - force resend packet
+  - how to resend packet again
+  - PR_RESEND_LOG count
+  - PR_RESEND_QUEUE manual
+  - packet older than 60 days not resent
+  - vessel asking same packet again and again
+  - resend gives up
+  - resend exhausted
+  - packet not sent even after resend button
+
+signatures:
+  - log_file: IntegrationServiceLog_.txt
+    regex: '\| No priority resend packets found'
+    source: RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/IntegrationMainBL.cs#L1560
+    confidence: low
+    note: "Normal when nothing needs resending; meaningful only while the receiver still has open missing packets."
+
+distinguishing_checks:
+  - check: "Sender side: resend-status.sql shows RESEND_LIMIT = LIMIT_REACHED for the counter the receiver reports missing."
+    script: catalog/scripts/resend-status.sql
+    if_true: "this issue"
+    if_false: "Resend still allowed -> check the 30-minute gap and the transport (ISS-PR-001)"
+  - check: "Is the packet older than 60 days (PACKET_MODIFIED_ON)?"
+    if_true: "Outside the automatic resend window as well -> this issue"
+    if_false: "continue"
+
+solutions:
+  - id: SOL-PR-002-A
+    title: Request a manual resend
+    steps:
+      - do: "Confirm the transport is now healthy; otherwise a manual resend will fail the same way."
+        who: support
+        requires_approval: false
+        verify: "Transport checks pass."
+      - do: "Request the resend through the supported route (RepIntegration Priority-All-Resend / TransferResendPacket) or, if dev agrees, by adding a PR_RESEND_QUEUE row with STATUS = 0 for the packet. This is a data change."
+        who: dev
+        requires_approval: true
+        verify: "PR_RESEND_QUEUE row moves to STATUS = 1 and the receiver's missing row becomes RCD."
+    escalate_if: "The packet file no longer exists on the sender."

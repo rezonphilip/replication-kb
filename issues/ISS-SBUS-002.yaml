@@ -1,0 +1,93 @@
+id: ISS-SBUS-002
+title: "Service Bus credentials, queue name or settings not found"
+status: draft
+author: claude
+reviewed_by: ""
+last_verified: 2026-11-11
+mechanism: [smartsync]
+runs_on: [office, vessel]
+components: [RepSbus, RepDBLogW]
+error_types: []
+related_docs: [CMP-REPSBUS, CMP-REPDBLOGW]
+
+symptoms:
+  - RepSbus never starts listening after install, upgrade or database restore.
+  - Notifications fail to send; import items abort with "Queue name is null or empty".
+
+phrasings:
+  - service bus credentials not found
+  - sbus connection string missing
+  - queue name not found
+  - queue name not found in config
+  - queue not created
+  - queue does not exist
+  - queue creation failed
+  - sbus settings not loaded
+  - CommonSettingsSbus not found
+  - after db restore service bus stopped
+  - after upgrade sbus not working
+  - new vessel setup service bus not working
+  - new vessel cannot receive
+  - REP_SERVICEBUS_CONNECTION_STRING empty
+  - service bus connection string and basic info is not found
+  - V2V queue name missing
+  - vessel to vessel notifications fail
+  - import item aborted queue name empty
+  - general notification not sent
+  - credentials not fetched
+  - sbus config missing in database
+  - dblogw settings for sbus not returned
+
+signatures:
+  - log_file: SbusLog_.txt
+    regex: 'service bus connection string and basic info is not found'
+    source: RepSbus/MariApps.PAL.Rep.Sbus.Service/BL/CommonDataConduit.cs#L76
+    confidence: high
+  - log_file: SbusLog_.txt
+    regex: 'Service bus credentials not found for (?<key>\S+)'
+    source: RepSbus/MariApps.PAL.Rep.Sbus.Service/BL/CommonDataConduit.cs#L227
+    confidence: high
+  - log_file: SbusLog_.txt
+    regex: 'Queue name (is not found|not found found in config|not found in memory store for V2V data)'
+    source: RepSbus/MariApps.PAL.Rep.Sbus.Service/BL/CommonDataConduit.cs#L111
+    confidence: high
+  - log_file: SbusLog_.txt
+    regex: 'CommonSettingsSbus not found for (?<key>\S+)'
+    source: RepSbus/MariApps.PAL.Rep.Sbus.Service/BL/CommonDataConduit.cs#L306
+    confidence: high
+  - log_file: SbusLog_.txt
+    regex: 'Queue creation failed (for|:) ?(?<queue>\S+)'
+    source: RepSbus/MariApps.PAL.Rep.Sbus.Service/BL/ServiceBusOperation.cs#L208
+    confidence: high
+  - log_file: IntegrationServiceLog_.txt
+    regex: 'Queue name is null or empty for Import Item (?<id>\d+)'
+    source: RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/QueueHandler/ImportQueueProcess.cs#L1279
+    confidence: medium
+
+distinguishing_checks:
+  - check: "Does RepDBLogW answer `DBlogWrite/TestService` and can it reach SQL Server?"
+    if_true: "settings are genuinely missing in the database → this issue"
+    if_false: "RepDBLogW/database problem; RepSbus cannot load anything (see CMP-REPDBLOGW)"
+  - check: "Run catalog script `sbus-settings-presence.sql` (read-only) to see which settings rows exist (names only, no values)."
+    script: catalog/scripts/sbus-settings-presence.sql
+    if_true: "rows missing → this issue"
+    if_false: "rows exist → check queue creation messages / permissions"
+
+solutions:
+  - id: SOL-SBUS-002-A
+    title: "Restore missing Service Bus settings"
+    when: "Credentials, queue name or common settings are reported missing and RepDBLogW is healthy."
+    steps:
+      - do: "Identify which key is missing from the log (`{KeyName}` / `{QueueName}`) and confirm with the read-only script."
+        who: support
+        requires_approval: false
+        verify: "Missing key named."
+      - do: "Ask dev/ops to restore the setting from the environment's configuration source (never paste secret values into tickets or the KB). The connection string is read from REP.REP_SERVICEBUS_CREDENTIALS and queue names from REP.REP_PR_SUBSCRIBER_LIST, not only CO_Parameters (DATA-MSREP-OVERVIEW)."
+        who: dev
+        requires_approval: true
+        verify: "Script shows the row present."
+      - do: "Clear RepSbus cached state by restarting the RepSbus service (settings are cached for `CacheSettingsInMinutes`)."
+        who: support
+        requires_approval: true
+        verify: "Log shows listener started; no \"not found\" messages in the next cycle."
+    escalate_if: "Queue creation fails with an authorization error (credentials lack manage rights) — needs the Service Bus namespace owner."

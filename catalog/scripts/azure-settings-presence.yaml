@@ -1,0 +1,26 @@
+id: SCR-AZURE-SETTINGS-PRESENCE
+title: SmartSync Azure parameters present (names only)
+file: azure-settings-presence.sql
+read_only: true
+returns_secrets: false
+runs_on:
+- office
+- vessel
+parameters: []
+used_by:
+- ISS-AZURE-002
+result_rules:
+- when: REP_AZURE_STORAGE_ACCOUNT_KEY is EMPTY in CO_Parameters but PRESENT in REP_SERVICEBUS_CREDENTIALS
+  means: Normal - the services read the secret from REP_SERVICEBUS_CREDENTIALS (DATA-MSREP-OVERVIEW).
+- when: REP_AZURE_STORAGE_ACCOUNT_KEY is MISSING or EMPTY in REP_SERVICEBUS_CREDENTIALS
+  means: Secret not configured where the settings procedures read it -> ISS-AZURE-002
+- when: any STATE = MISSING or EMPTY
+  means: Storage settings incomplete -> ISS-AZURE-002 solution A
+- when: all PRESENT
+  means: Keys exist; if access still fails the value is wrong/expired or the network blocks storage
+sources:
+- inventory/ms-rep.md (RepAzure parameters)
+- RepTransfer/MariApps.PAL.Rep.Transfer.DAL/TransferRepository.cs#L106 (CO_PARAMETERS NAME/VALUE columns)
+- RepTransfer/PAL.DatabaseScripts.Office/StoredProcedures/009_SP_[REP].[REP_GET_AZURE_SETTINGS].sql#L7-L9
+- RepTransfer/PAL.DatabaseScripts.Office/StoredProcedures/010_SP_[REP].[REP_GET_SBUS_SETTINGS].sql#L7-L9
+status: draft

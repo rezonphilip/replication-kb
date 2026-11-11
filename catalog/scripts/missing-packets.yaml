@@ -1,0 +1,25 @@
+id: SCR-MISSING-PACKETS
+title: Open missing packets for a vessel (receiver side)
+file: missing-packets.sql
+read_only: true
+returns_secrets: false
+runs_on: [office, vessel]
+parameters:
+  - name: vessel_object_id
+    type: bigint
+    from: dashboard vessel context
+used_by: [ISS-PR-001, ISS-PR-002]
+result_rules:
+  - when: no rows
+    means: No open gaps on this side; a stuck import is not caused by missing packets.
+  - when: rows with STATUS MSG
+    means: Counter never arrived; the sender should resend it (DATA-MSREP-RESEND). Check the sender's resend log for the same counter.
+  - when: rows with STATUS ERR
+    means: Arrived but not processed within 15 minutes, or reported again; will be re-requested.
+  - when: rows with STATUS RCD older than 15 minutes
+    means: Received but no import-queue item; next run marks it ERR.
+  - when: the lowest open PACKET_CTR is older than a day
+    means: Likely resend limit reached on the sender side (ISS-PR-002).
+sources:
+  - RepIntegration/PAL.DatabaseScripts.Office/StoredProcedures/004_PR_REP_MISSING_PACKETS_OPERATIONS.sql#L14-L64
+status: draft

@@ -1,0 +1,87 @@
+id: ISS-AZURE-002
+title: "Azure storage settings or credentials invalid"
+status: draft
+author: claude
+reviewed_by: ""
+last_verified: 2026-11-11
+mechanism: [smartsync]
+runs_on: [office, vessel]
+components: [RepAzure, RepAzureRes, RepDBLogW]
+error_types: []
+related_docs: [CMP-REPAZURE, CMP-REPAZURERES]
+
+symptoms:
+  - Neither uploads nor downloads work on one machine.
+  - AzureVerifyAccess / CheckAzureSettings fail.
+
+phrasings:
+  - azure account key empty
+  - azure connection string empty
+  - azure settings verification failed
+  - cannot proceed with upload
+  - storage account access denied
+  - blob container not found
+  - azure credentials wrong
+  - AzureVerifyAccess failed
+  - CheckAzureSettings failed
+  - after key rotation azure stopped
+  - after db restore azure not working
+  - new vessel azure not configured
+  - storage key expired
+  - 403 from azure blob
+  - authentication failed azure storage
+  - azure primary connection string null
+  - azure blob connection string is null or empty
+  - container name missing
+  - smartsync upload and download both failing
+  - REP_AZURE_STORAGE_ACCOUNT_KEY wrong
+
+signatures:
+  - log_file: AzureResumeLog_.txt
+    regex: 'Azure settings verification failed, cannot proceed with upload'
+    source: RepAzureRes/MariApps.PAL.Rep.Azure.Res.Service/BL/UploadProcessBL.cs#L98
+    confidence: high
+  - log_file: AzureResumeLog_.txt
+    regex: 'Azure Account Key is empty'
+    source: RepAzureRes/MariApps.PAL.Rep.Azure.Res.Service/BL/UploadProcessBL.cs#L127
+    confidence: high
+  - log_file: AzureResumeLog_.txt
+    regex: 'AzurePrimaryConnectionString is (null or )?empty'
+    source: RepAzureRes/MariApps.PAL.Rep.Azure.Res.Service/BL/UploadProcessBL.cs#L133
+    confidence: high
+  - log_file: AzureResumeLog_.txt
+    regex: 'Azure Blob Connection string is null or empty'
+    source: RepAzureRes/MariApps.PAL.Rep.Azure.Res.Service/BL/UploadProcessBL.cs#L679
+    confidence: high
+  - log_file: AzureService_.txt
+    regex: 'Azure init settings message = (?<msg>.+)'
+    source: RepAzure/MariApps.PAL.Rep.Azure.Service/BL/AzureOperationBL.cs#L116
+    confidence: medium
+
+distinguishing_checks:
+  - check: "Is RepDBLogW healthy (`DBlogWrite/TestService`)? Settings are read through it."
+    if_true: "settings themselves are wrong/missing → this issue"
+    if_false: "fix RepDBLogW/database first"
+  - check: "Run `azure-settings-presence.sql` (read-only; reports which parameter names have a non-empty value, never the value)."
+    script: catalog/scripts/azure-settings-presence.sql
+    if_true: "a required key is empty → solution A"
+    if_false: "keys present → credentials likely wrong or expired → solution A step 2"
+
+solutions:
+  - id: SOL-AZURE-002-A
+    title: "Correct storage settings"
+    when: "Verification fails or keys are reported empty."
+    steps:
+      - do: "Identify which key is empty or rejected (log message + presence script)."
+        who: support
+        requires_approval: false
+        verify: "Key named in the case (name only)."
+      - do: "Dev/ops update the value from the environment's secret source (the storage key is read from REP.REP_SERVICEBUS_CREDENTIALS by REP_GET_AZURE_SETTINGS). Never paste values into tickets, chat or the KB."
+        who: dev
+        requires_approval: true
+        verify: "`Azure/AzureVerifyAccess` and `AzureResUpload/CheckAzureSettings` succeed."
+      - do: "Restart RepAzure and RepAzureRes (settings are cached for `CacheSettingsInMinutes`)."
+        who: support
+        requires_approval: true
+        verify: "Uploads and downloads resume."
+    escalate_if: "Verification still fails with correct keys — network/proxy (see ISS-AZURERES-001) or storage-side issue."

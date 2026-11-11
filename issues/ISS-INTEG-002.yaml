@@ -1,0 +1,82 @@
+id: ISS-INTEG-002
+title: "Export exits early — channel, working directory or PR-enabled vessels not configured"
+status: draft
+author: claude
+reviewed_by: ""
+last_verified: 2026-11-11
+mechanism: [priority-replication]
+runs_on: [office, vessel]
+components: [RepIntegration]
+error_types: []
+related_docs: [CMP-REPINTEGRATION, FLW-PR-EXPORT]
+
+symptoms:
+  - Integration runs every cycle but logs "Exiting." before creating any packets.
+
+phrasings:
+  - general packet channel information not found
+  - working directory is not configured
+  - no channel flow settings found for export
+  - no PR enabled vessels found
+  - no vessels found with general export enabled
+  - priority replication not enabled for vessel
+  - new vessel not getting priority data
+  - export exits immediately
+  - export runs but no packets
+  - general export not enabled
+  - failed to enable general export for vessel
+  - channel configuration missing
+  - transfer channel information not found
+  - no active vessels available to process
+  - PR not configured after setup
+  - vessel removed from priority replication
+  - export not picking any vessel
+  - priority replication config incomplete
+  - channel flow missing for table
+  - packets not generated for new client
+  - integration log says exiting every minute
+
+signatures:
+  - log_file: IntegrationServiceLog_.txt
+    regex: 'General Packet channel information not found\. Exiting\.'
+    source: RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/QueueHandler/ExportQueueProcess.cs#L58
+    confidence: high
+  - log_file: IntegrationServiceLog_.txt
+    regex: 'Working directory is not configured\. Exiting\.'
+    source: RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/QueueHandler/ExportQueueProcess.cs#L65
+    confidence: high
+  - log_file: IntegrationServiceLog_.txt
+    regex: 'No channel flow settings found for export\. Exiting\.'
+    source: RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/QueueHandler/ExportQueueProcess.cs#L75
+    confidence: high
+  - log_file: IntegrationServiceLog_.txt
+    regex: 'No PR enabled vessels found\. Exiting\.'
+    source: RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/QueueHandler/ExportQueueProcess.cs#L85
+    confidence: high
+  - log_file: IntegrationServiceLog_.txt
+    regex: 'No vessels found with General Export enabled\. Exiting\.'
+    source: RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/QueueHandler/ExportQueueProcess.cs#L93
+    confidence: high
+  - log_file: IntegrationServiceLog_.txt
+    regex: 'Transfer channel information not found\. Exiting\.'
+    source: RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/QueueHandler/ExportQueueProcess.cs#L535
+    confidence: high
+
+distinguishing_checks:
+  - check: "Which \"Exiting.\" message appears? Each names the missing configuration."
+    if_true: "this issue"
+    if_false: "The message No pending track records found for export is normal when nothing changed"
+
+solutions:
+  - id: SOL-INTEG-002-A
+    title: "Complete the Priority Replication configuration"
+    steps:
+      - do: "Note the exact \"Exiting.\" message and the vessel(s) concerned."
+        who: support
+        requires_approval: false
+        verify: "Missing item named."
+      - do: "Dev/ops configure the missing channel / working directory / vessel PR or General Export flag. Which tables hold these: Not determined from code (open question Q6)."
+        who: dev
+        requires_approval: true
+        verify: "Next cycle continues past the check."
+    escalate_if: "Configuration exists but the message persists — data read issue; check RepDBLogW."

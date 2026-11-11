@@ -1,0 +1,21 @@
+order: [SmartSync transport, Transfer adapter (over SmartSync), Orchestrator (Priority Replication + iRep transfer), Priority Replication core (DB gateway), "Priority Replication: send side", "Priority Replication: receive side"]
+groups:
+  RepSbus: SmartSync transport
+  RepAzure: SmartSync transport
+  RepAzureRes: SmartSync transport
+  RepTransfer: Transfer adapter (over SmartSync)
+  RepIntegration: Orchestrator (Priority Replication + iRep transfer)
+  RepDBLogW: Priority Replication core (DB gateway)
+  RepProData: "Priority Replication: send side"
+  RepPacketCreation: "Priority Replication: send side"
+  RepCompression: "Priority Replication: send side"
+  RepSplit: "Priority Replication: send side"
+  RepPacketInterim: "Priority Replication: send side"
+  RepTrack: "Priority Replication: send side"
+  RepMedium: "Priority Replication: send side"
+  RepQueueManage: "Priority Replication: send side"
+  RepAcquisition: "Priority Replication: receive side"
+  RepFileMerge: "Priority Replication: receive side"
+  RepDecompress: "Priority Replication: receive side"
+  RepSaveData: "Priority Replication: receive side"
+  RepAckn: "Priority Replication: receive side"

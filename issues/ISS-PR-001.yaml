@@ -1,0 +1,83 @@
+id: ISS-PR-001
+title: "Imports waiting because an earlier packet is missing (sequence gap)"
+status: draft
+author: claude
+reviewed_by: ""
+last_verified: 2026-11-11
+mechanism: [priority-replication]
+runs_on: [office, vessel]
+components: [RepIntegration, RepAcquisition]
+error_types: []
+related_docs: [DATA-MSREP-RESEND, DATA-MSREP-STATUS, FLW-PR-IMPORT]
+
+symptoms:
+  - "Packets are downloaded on the receiving side but their data does not appear."
+  - "Import queue items stay in AWAITING; the log says a packet is waiting for another packet."
+  - "Missing-packet rows (MSG/ERR) exist for the vessel."
+
+phrasings:
+  - packets received but not imported
+  - import stuck waiting
+  - packet is waiting for another packet
+  - waiting for previous packet
+  - sequence gap priority replication
+  - missing packet blocking import
+  - one packet missing everything stuck
+  - out of order packets not processed
+  - import queue awaiting
+  - AWAITING status import queue
+  - vessel data stuck after missing packet
+  - office not applying vessel packets
+  - packet counter gap
+  - missing packet MSG status
+  - data not updating on ship but files arrived
+  - later packets not applied
+  - PR import hold
+  - seq waiting
+  - packet sequence wait
+  - import blocked by missing counter
+  - missing packets table has rows
+  - resend needed for missing packet
+
+signatures:
+  - log_file: IntegrationServiceLog_.txt
+    regex: 'Packet is waiting (?<counter>\d+) for another packet before this to proceeed'
+    source: RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/QueueHandler/ImportQueueProcess.cs#L699
+    confidence: high
+  - log_file: IntegrationServiceLog_.txt
+    regex: 'no queue name found for missing packet notification for record (?<id>\d+)'
+    source: RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/IntegrationMainBL.cs#L1732
+    confidence: medium
+    note: "The missing list could not be sent to the other side, so the gap will not be filled."
+
+distinguishing_checks:
+  - check: "Run missing-packets.sql for the vessel on the RECEIVING side."
+    script: catalog/scripts/missing-packets.sql
+    if_true: "Open MSG/ERR rows exist -> this issue"
+    if_false: "No gaps -> look at ISS-INTEG-003 (merge/decompress/ackn failure)"
+  - check: "On the SENDING side, run resend-status.sql for the same vessel and look at the missing counters."
+    script: catalog/scripts/resend-status.sql
+    if_true: "RESEND_LIMIT = LIMIT_REACHED -> ISS-PR-002"
+    if_false: "Resends still possible -> wait for the next resend (at least 30 minutes apart) and check the transport"
+
+solutions:
+  - id: SOL-PR-001-A
+    title: Get the missing packet delivered
+    steps:
+      - do: "Note the lowest missing PACKET_CTR and its status from missing-packets.sql."
+        who: support
+        requires_approval: false
+        verify: "Counter identified."
+      - do: "On the sender, check that the packet exists in PR_REP_OUT_Packet_HD and has not reached the resend limit (resend-status.sql)."
+        who: support
+        requires_approval: false
+        verify: "Packet found with RESEND_COUNT below 5."
+      - do: "Confirm the transport is healthy on both sides (RepSbus listener, RepAzure download, RepAzureRes upload) - a resend cannot arrive if the transport is down."
+        who: support
+        requires_approval: false
+        verify: "No open ISS-SBUS-001 / ISS-AZURE-001 / ISS-AZURERES-001 symptoms."
+      - do: "If the resend limit is reached, follow ISS-PR-002."
+        who: support
+        requires_approval: false
+        verify: "Missing row becomes RCD then PSD; waiting import items continue."
+    escalate_if: "The packet does not exist on the sender (cannot be resent) - dev must decide how to close the gap."

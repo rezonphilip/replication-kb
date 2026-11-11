@@ -1,0 +1,92 @@
+id: ISS-AZURE-001
+title: "Azure download not progressing (download lane stuck or failing)"
+status: draft
+author: claude
+reviewed_by: ""
+last_verified: 2026-11-11
+mechanism: [smartsync]
+runs_on: [office, vessel]
+components: [RepAzure]
+error_types: []
+related_docs: [CMP-REPAZURE, FLW-PR-IMPORT]
+
+symptoms:
+  - Sender shows packets uploaded; receiver has nothing new in the inbox.
+  - RepAzure log repeats "Download process is already running" for hours.
+  - RepAzure log shows an exception in the background download process.
+
+phrasings:
+  - azure download stuck
+  - files not downloading from azure
+  - blob download not happening
+  - vessel not downloading packets
+  - office not downloading vessel packets
+  - download process is already running
+  - download process time exceeded
+  - RepAzure stuck
+  - azure service not picking files
+  - exception in background download process
+  - JsonReaderException in IntiateDownloadQueue
+  - unexpected character < azure
+  - azure download error after network drop
+  - large file not downloading
+  - big packet stuck in azure
+  - download queue not moving
+  - pending downloads increasing
+  - packets in container but not received
+  - need to restart RepAzure to get files
+  - azure network status failed
+  - azure init settings failed
+  - files downloaded but not moved to inbox
+  - move pending files failed
+  - smartsync download problem
+
+signatures:
+  - log_file: AzureService_.txt
+    regex: 'Exception in background download process in'
+    source: RepAzure/MariApps.PAL.Rep.Azure.Service/BL/AzureOperationBL.cs#L224
+    confidence: high
+  - log_file: AzureService_.txt
+    regex: 'Download process is already running\. Exiting\.'
+    source: RepAzure/MariApps.PAL.Rep.Azure.Service/BL/AzureOperationBL.cs#L205
+    confidence: low
+    note: "Normal occasionally; an issue only if it repeats for longer than the lane's exceed time."
+  - log_file: AzureService_.txt
+    regex: 'Download process time exceeded\. Removing status\.'
+    source: RepAzure/MariApps.PAL.Rep.Azure.Service/BL/AzureOperationBL.cs#L199
+    confidence: medium
+  - log_file: AzureService_.txt
+    regex: 'Network Status = (?<msg>.+)'
+    source: RepAzure/MariApps.PAL.Rep.Azure.Service/BL/AzureOperationBL.cs#L128
+    confidence: medium
+  - log_file: AzureService_.txt
+    regex: 'Exception in background move process in'
+    source: RepAzure/MariApps.PAL.Rep.Azure.Service/BL/AzureOperationBL.cs#L284
+    confidence: medium
+
+distinguishing_checks:
+  - check: "Call `Azure/ReadBlobDownloadStaticData` and `Azure/ReadingStaticProcess` to see the in-memory download queue and running flags."
+    if_true: "flag set and queue not shrinking → stuck lane (solution A)"
+    if_false: "nothing queued → files were never listed for download; check RepSbus on this side (ISS-SBUS-001)"
+  - check: "Does `Azure/AzureVerifyAccess` succeed?"
+    if_true: "access fine → this issue"
+    if_false: "ISS-AZURE-002"
+
+solutions:
+  - id: SOL-AZURE-001-A
+    title: "Clear a stuck download lane"
+    when: "The download flag is stuck or the background download threw an exception."
+    steps:
+      - do: "Capture the last exception text from `AzureService_` (needed for dev if it recurs)."
+        who: support
+        requires_approval: false
+        verify: "Exception saved to the case."
+      - do: "Clear in-memory state with `Azure/ChronoStaticCleansing`, or restart the RepAzure service (both clear flags)."
+        who: support
+        requires_approval: true
+        verify: "Next cycle logs \"Download process status updated\" and downloads progress."
+      - do: "Confirm files move to the inbox and RepAcquisition picks them up."
+        who: support
+        requires_approval: false
+        verify: "Import items appear (FLW-PR-IMPORT)."
+    escalate_if: "The same exception (for example a JSON parse error with \"<\") returns after restart — likely an HTML/proxy response where JSON was expected; dev to investigate."

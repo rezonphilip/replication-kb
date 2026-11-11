@@ -1,0 +1,82 @@
+id: ISS-INTEG-003
+title: "Import item fails at merge, decompress or acknowledgement"
+status: draft
+author: claude
+reviewed_by: ""
+last_verified: 2026-11-11
+mechanism: [priority-replication]
+runs_on: [office, vessel]
+components: [RepIntegration, RepFileMerge, RepDecompress, RepAckn]
+error_types: []
+related_docs: [FLW-PR-IMPORT, CMP-REPFILEMERGE, CMP-REPDECOMPRESS, CMP-REPACKN]
+
+symptoms:
+  - Files were downloaded but data does not appear; the sender keeps resending.
+
+phrasings:
+  - import failed
+  - import item aborted
+  - file merge service failed
+  - merge failed missing split
+  - decompress failed
+  - zip corrupt replication
+  - cannot extract packet
+  - ackn service failed
+  - acknowledgement not sent
+  - packet received but data not saved
+  - data downloaded but not imported
+  - import queue stuck
+  - file not found primary location missing
+  - AllZipDirectory does not exist
+  - failed to save decompressed files
+  - received packets not processed
+  - vessel received but office still resending
+  - import error priority replication
+  - import item failed again and again
+  - merge error missing part
+  - decompress error invalid zip
+
+signatures:
+  - log_file: IntegrationServiceLog_.txt
+    regex: 'File Merge Service failed for Import Item (?<id>\d+) with error (?<err>.+)'
+    source: RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/QueueHandler/ImportQueueProcess.cs#L746
+    confidence: high
+  - log_file: IntegrationServiceLog_.txt
+    regex: 'Process failed while handling Decompress service'
+    source: RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/QueueHandler/ImportQueueProcess.cs#L868
+    confidence: high
+  - log_file: IntegrationServiceLog_.txt
+    regex: 'Process failed while handling ackn service'
+    source: RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/QueueHandler/ImportQueueProcess.cs#L1107
+    confidence: high
+  - log_file: IntegrationServiceLog_.txt
+    regex: 'Import item has been aborted due to error (?<err>.+) for Import Item (?<id>\d+)'
+    source: RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/QueueHandler/ImportQueueProcess.cs#L762
+    confidence: high
+  - log_file: IntegrationServiceLog_.txt
+    regex: 'AllZipDirectory does not exist or is not configured'
+    source: RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/QueueHandler/ImportQueueProcess.cs#L451
+    confidence: high
+
+distinguishing_checks:
+  - check: "Which step failed (merge / decompress / ackn)? Open that service's own log for the same time."
+    if_true: "merge → usually a split part missing (wait for resend or request resend); decompress → corrupt/incomplete file; ackn → destination URL/settings"
+    if_false: "n/a"
+
+solutions:
+  - id: SOL-INTEG-003-A
+    title: "Recover a failed import item"
+    steps:
+      - do: "Identify the import item id and failing step from the log."
+        who: support
+        requires_approval: false
+        verify: "Step identified."
+      - do: "For merge/decompress failures, request a resend of the packet from the sender (RepIntegration `TransferResendPacket` / priority resend)."
+        who: support
+        requires_approval: true
+        verify: "New file arrives and the item completes."
+      - do: "For ackn failures, check `Base URL or API URL is empty` in `AcknLog_` and have dev correct the destination settings."
+        who: dev
+        requires_approval: true
+        verify: "Ackn succeeds; sender stops resending."
+    escalate_if: "The same packet fails after resend."

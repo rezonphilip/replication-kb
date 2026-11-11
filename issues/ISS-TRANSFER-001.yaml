@@ -1,0 +1,92 @@
+id: ISS-TRANSFER-001
+title: "Vessel delivery method (transfer type) missing or folder not configured"
+status: draft
+author: claude
+reviewed_by: ""
+last_verified: 2026-11-11
+mechanism: [priority-replication, smartsync]
+runs_on: [office, vessel]
+components: [RepTransfer, RepIntegration]
+error_types: []
+related_docs: [CMP-REPTRANSFER, FLW-PR-EXPORT]
+
+symptoms:
+  - Packets are created but never reach the outbox for one vessel.
+  - RepIntegration logs "Transfer failed for vessel ..." for the same vessel every cycle.
+
+phrasings:
+  - transfer type could not be found
+  - packets not moving to outbox
+  - outbox empty for vessel
+  - new vessel packets not sent
+  - transfer failed for vessel
+  - delivery method missing
+  - REP_VESSEL_INFRA missing vessel
+  - out box folder is not gotten
+  - transferMediumBaseFolder is null or empty
+  - transfer directory is empty for transfer type
+  - wrong delivery method for vessel
+  - vessel switched to azure but still email
+  - packets created not transferred
+  - RepTransfer failing for one vessel
+  - only one vessel not replicating
+  - priority packets stuck before upload
+  - error while moving file transfer type
+  - packet status not PCK
+  - transfer step fails every minute
+  - export ok transfer not ok
+
+signatures:
+  - log_file: TransferServiceLog_.txt
+    regex: 'Transfer Type could not be found'
+    source: RepTransfer/MariApps.PAL.Rep.Transfer.Service/BL/TransferBL.cs#L60
+    confidence: high
+  - log_file: TransferServiceLog_.txt
+    regex: 'transferMediumBaseFolder is null or empty for transfer type: (?<type>\d+)'
+    source: RepTransfer/MariApps.PAL.Rep.Transfer.Service/BL/TransferBL.cs#L76
+    confidence: high
+  - log_file: TransferServiceLog_.txt
+    regex: 'Out box folder is not gotten for transfer type ?(?<type>\d*)'
+    source: RepTransfer/MariApps.PAL.Rep.Transfer.Service/BL/TransferBL.cs#L131
+    confidence: high
+  - log_file: TransferServiceLog_.txt
+    regex: 'Transfer directory is empty for transferType (?<type>\S+), vessel (?<vessel>\d+)'
+    source: RepTransfer/MariApps.PAL.Rep.Transfer.Service/BL/TransferHandler.cs#L58
+    confidence: high
+  - log_file: IntegrationServiceLog_.txt
+    regex: 'Transfer failed for vessel (?<vessel>\d+) with message: (?<msg>.+)'
+    source: RepIntegration/MariApps.PAL.Rep.Integration.Service/BL/QueueHandler/ExportQueueProcess.cs#L672
+    confidence: medium
+
+distinguishing_checks:
+  - check: "Run `vessel-delivery-method.sql` for the vessel (read-only)."
+    script: catalog/scripts/vessel-delivery-method.sql
+    if_true: "no row / empty DELIVERY_METHOD → solution A"
+    if_false: "method set → folder for that method not configured → solution B"
+
+solutions:
+  - id: SOL-TRANSFER-001-A
+    title: "Set the vessel's delivery method"
+    when: "No DELIVERY_METHOD for the vessel."
+    steps:
+      - do: "Confirm with the vessel/onboarding owner which delivery method the vessel should use."
+        who: support
+        requires_approval: false
+        verify: "Method agreed (0, 1 or 2 — 2 is Azure/SmartSync)."
+      - do: "Dev/ops set DELIVERY_METHOD in REP.REP_VESSEL_INFRA for the vessel."
+        who: dev
+        requires_approval: true
+        verify: "Script returns the method."
+      - do: "Wait one RepIntegration cycle (or run `Initiate-PR-Transfer-Queue`)."
+        who: support
+        requires_approval: true
+        verify: "Packets appear in the outbox and status becomes PCK."
+  - id: SOL-TRANSFER-001-B
+    title: "Configure the base folder for the delivery method"
+    when: "Method is set but the folder lookup returns empty."
+    steps:
+      - do: "Dev checks REP.PR_REP_TRANSFER_MASTER for the delivery ID (0/1 -> REP_OFF_ROOT, 2 -> REP_AZURE_ROOT, 3 -> REP_REALM_ROOT) and that exactly one CO_Parameters name contains that code with the right folder value."
+        who: dev
+        requires_approval: true
+        verify: "No \"folder is null or empty\" lines in the next cycle."
+    escalate_if: "The folder exists but moves fail with access errors — service account permissions."

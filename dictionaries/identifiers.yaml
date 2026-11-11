@@ -1,0 +1,952 @@
+# Canonical names extracted from MS-REP (snapshot 2026-11-11). Names only, never values.
+services:
+  RepAckn:
+    doc_id: CMP-REPACKN
+    log_file: AcknLog_.txt
+  RepAcquisition:
+    doc_id: CMP-REPACQUISITION
+    log_file: AcquisitionLog_.txt
+  RepAzure:
+    doc_id: CMP-REPAZURE
+    log_file: AzureService_.txt
+  RepAzureRes:
+    doc_id: CMP-REPAZURERES
+    log_file: AzureResumeLog_.txt
+  RepCompression:
+    doc_id: CMP-REPCOMPRESSION
+    log_file: Compression_Log_.txt
+  RepDBLogW:
+    doc_id: CMP-REPDBLOGW
+    log_file: DbLogServiceLog_.txt
+  RepDecompress:
+    doc_id: CMP-REPDECOMPRESS
+    log_file: DecompressLog_.txt
+  RepFileMerge:
+    doc_id: CMP-REPFILEMERGE
+    log_file: FileMergeLog_.txt
+  RepIntegration:
+    doc_id: CMP-REPINTEGRATION
+    log_file: IntegrationServiceLog_.txt
+  RepMedium:
+    doc_id: CMP-REPMEDIUM
+    log_file: Log_.txt
+  RepPacketCreation:
+    doc_id: CMP-REPPACKETCREATION
+    log_file: PacketCreatLog_.txt
+  RepPacketInterim:
+    doc_id: CMP-REPPACKETINTERIM
+    log_file: PacketInterimLog_.txt
+  RepProData:
+    doc_id: CMP-REPPRODATA
+    log_file: ProDataLog_.txt
+  RepQueueManage:
+    doc_id: CMP-REPQUEUEMANAGE
+    log_file: QueueManagerLog_.txt
+  RepSaveData:
+    doc_id: CMP-REPSAVEDATA
+    log_file: SaveDataLog_.txt
+  RepSbus:
+    doc_id: CMP-REPSBUS
+    log_file: SbusLog_.txt
+  RepSplit:
+    doc_id: CMP-REPSPLIT
+    log_file: SplitServiceLog_.txt
+  RepTrack:
+    doc_id: CMP-REPTRACK
+    log_file: TrackServiceLog_.txt
+  RepTransfer:
+    doc_id: CMP-REPTRANSFER
+    log_file: TransferServiceLog_.txt
+co_parameters:
+  PR_PACKET_COUNTER:
+    used_by:
+    - RepAckn
+    - RepIntegration
+    secret: false
+  PR_PACKET_INFO_:
+    used_by:
+    - RepDecompress
+    - RepPacketCreation
+    secret: false
+  PR_PARAM:
+    used_by:
+    - RepCompression
+    - RepDecompress
+    - RepIntegration
+    - RepPacketCreation
+    - RepSplit
+    - RepTransfer
+    secret: false
+  PR_PCK_:
+    used_by:
+    - RepPacketCreation
+    secret: false
+  PR_REP_IN_PACKET_HD_ID:
+    used_by:
+    - RepDBLogW
+    secret: false
+  PR_REP_MAX_ATTACHMENT_SIZE:
+    used_by:
+    - RepMedium
+    - RepPacketCreation
+    secret: false
+  PR_REP_ROOT:
+    used_by:
+    - RepAcquisition
+    - RepAzureRes
+    - RepCompression
+    - RepDecompress
+    - RepIntegration
+    - RepPacketCreation
+    - RepProData
+    - RepSplit
+    - RepTransfer
+    secret: false
+  PR_REP_SPLIT_SIZE:
+    used_by:
+    - RepIntegration
+    - RepSplit
+    secret: false
+  PR_TRACKCHANGE_RECORDS_ID:
+    used_by:
+    - RepTrack
+    secret: false
+  REP_AZURE_STORAGE_ACCOUNT_KEY:
+    used_by:
+    - RepAzure
+    - RepDBLogW
+    secret: true
+  REP_AZURE_STORAGE_ACCOUNT_NAME:
+    used_by:
+    - RepAzure
+    - RepDBLogW
+    secret: false
+  REP_CHUNK_SIZE:
+    used_by:
+    - RepDBLogW
+    - RepIntegration
+    secret: false
+  REP_CLIENT_CODE:
+    used_by:
+    - RepAzure
+    - RepDBLogW
+    secret: false
+  REP_CLIENT_ENVIROMENT_UNICID:
+    used_by:
+    - RepAzure
+    - RepDBLogW
+    secret: false
+  REP_CODE:
+    used_by:
+    - RepAcquisition
+    - RepIntegration
+    - RepPacketCreation
+    secret: false
+  REP_INTERGRATION_:
+    used_by:
+    - RepDBLogW
+    secret: false
+  REP_INTERGRATION_API_URL:
+    used_by:
+    - RepDBLogW
+    - RepSbus
+    secret: false
+  REP_INTERGRATION_BASE_URL:
+    used_by:
+    - RepDBLogW
+    - RepSbus
+    secret: false
+  REP_IN_INBOX:
+    used_by:
+    - RepDBLogW
+    secret: false
+  REP_LOCATION:
+    used_by:
+    - RepAzure
+    - RepDBLogW
+    secret: false
+  REP_LOG:
+    used_by:
+    - RepAckn
+    - RepTransfer
+    secret: false
+  REP_MANUAL_OP_PATH:
+    used_by:
+    - RepDBLogW
+    secret: false
+  REP_OFF_ROOT:
+    used_by:
+    - RepAcquisition
+    - RepDecompress
+    - RepFileMerge
+    secret: false
+  REP_PARALLEL_PROCESS_COUNT:
+    used_by:
+    - RepDBLogW
+    - RepIntegration
+    secret: false
+  REP_PR_AZURE_IN:
+    used_by:
+    - RepIntegration
+    - RepTransfer
+    secret: false
+  REP_PR_AZURE_SENT:
+    used_by:
+    - RepTransfer
+    secret: false
+  REP_PR_KEY_MASTER_ID:
+    used_by:
+    - RepAcquisition
+    - RepIntegration
+    secret: true
+  REP_RETRY_COUNT:
+    used_by:
+    - RepDBLogW
+    secret: false
+  REP_SERVICEBUS_CONNECTION_STRING:
+    used_by:
+    - RepDBLogW
+    secret: true
+  REP_SOURCE_UNIQUE_ID:
+    used_by:
+    - RepAcquisition
+    - RepIntegration
+    secret: false
+  REP_SOURCE_UNIQUE_OBJECT_TYPE:
+    used_by:
+    - RepAcquisition
+    - RepIntegration
+    secret: false
+  REP_STORAGE_CONTAINER_NAME:
+    used_by:
+    - RepAzure
+    - RepDBLogW
+    secret: false
+  REP_WINDOWS_SERVICE:
+    used_by:
+    - RepSbus
+    secret: false
+  REP_ZIP_UTILITY:
+    used_by:
+    - RepCompression
+    - RepDecompress
+    secret: false
+stored_procedures:
+  REP.GET_MISSING_PRIORITY_PACKETS:
+  - RepAcquisition
+  REP.GET_V2V_MISSING_PACKET_STATUS:
+  - RepAcquisition
+  REP.GET_V2V_PACKET_COUNTER_IMPORT:
+  - RepAcquisition
+  REP.PRIORITY_RESEND_DATA:
+  - RepIntegration
+  REP.PR_COMMON_ID_TYP:
+  - RepDBLogW
+  - RepIntegration
+  REP.PR_GET_PACKET_DATA:
+  - RepPacketCreation
+  REP.PR_GET_PARAM_DATA:
+  - RepAcquisition
+  - RepAzure
+  - RepDBLogW
+  - RepDecompress
+  - RepFileMerge
+  - RepIntegration
+  - RepPacketInterim
+  - RepSplit
+  - RepTransfer
+  REP.PR_GET_RESEND_PACKET:
+  - RepTransfer
+  REP.PR_GET_TRANSFER_DATA:
+  - RepAcquisition
+  - RepAzure
+  - RepDBLogW
+  - RepDecompress
+  - RepFileMerge
+  - RepIntegration
+  - RepPacketCreation
+  - RepTransfer
+  REP.PR_GET_VESSEL_CODE:
+  - RepAcquisition
+  - RepIntegration
+  - RepPacketCreation
+  - RepTrack
+  REP.PR_OUT_PACKET_TYP:
+  - RepIntegration
+  REP.PR_PACKET_TRANSFER_INFO:
+  - RepIntegration
+  REP.PR_REP_DELETE_OUT_TRACK_Q_DATA:
+  - RepIntegration
+  REP.PR_REP_EXPORT_QUEUE_DT_TYP:
+  - RepIntegration
+  REP.PR_REP_EXPORT_QUEUE_TYP:
+  - RepIntegration
+  REP.PR_REP_GET_ALL_SETTINGS:
+  - RepAcquisition
+  REP.PR_REP_GET_ALL_TABLESETTINGS:
+  - RepIntegration
+  REP.PR_REP_GET_CHANNEL_FLOW_SETTINGS:
+  - RepIntegration
+  REP.PR_REP_GET_PACKET_COUNTER:
+  - RepAcquisition
+  - RepPacketCreation
+  REP.PR_REP_IMPORT_MOVE_HISTQ:
+  - RepIntegration
+  REP.PR_REP_IMPORT_QUEUE_DT_TYP:
+  - RepAcquisition
+  - RepDBLogW
+  - RepIntegration
+  REP.PR_REP_IMPORT_QUEUE_EXCEED_STATUS_TYP:
+  - RepIntegration
+  REP.PR_REP_IMPORT_QUEUE_TYP:
+  - RepAcquisition
+  - RepDBLogW
+  - RepIntegration
+  REP.PR_REP_INSERT_OUT_TRACK_Q_DATA:
+  - RepIntegration
+  REP.PR_REP_INT_GETPENDING_RECORDS:
+  - RepIntegration
+  REP.PR_REP_MISSING_PACKETS:
+  - RepAcquisition
+  REP.PR_REP_MISSING_PACKETS_EXT:
+  - RepAcquisition
+  REP.PR_REP_MISSING_PACKETS_OPERATIONS:
+  - RepAcquisition
+  - RepDecompress
+  - RepFileMerge
+  - RepIntegration
+  REP.PR_REP_OUT_FILE_DT:
+  - RepPacketCreation
+  REP.PR_REP_OUT_TRACK_QUEUE_TYP:
+  - RepIntegration
+  REP.PR_REP_PACKET_DT_TYP:
+  - RepIntegration
+  REP.PR_REP_PACKET_UPDATE_BY_ID:
+  - RepIntegration
+  REP.PR_REP_READ_ALL_CHANNELS:
+  - RepAcquisition
+  - RepIntegration
+  REP.PR_REP_READ_OUT_TRACK_Q_DATA:
+  - RepIntegration
+  REP.PR_REP_READ_PENDING_EXPORT:
+  - RepIntegration
+  REP.PR_REP_READ_TRACK_RECORDS:
+  - RepIntegration
+  REP.PR_REP_SAVE_IMPORT_PACKET_DATA:
+  - RepAcquisition
+  REP.PR_REP_SAVE_IMPORT_PACKET_DATA_BULK:
+  - RepAcquisition
+  REP.PR_REP_SAVE_PACKET_DATA:
+  - RepPacketCreation
+  REP.PR_REP_SAVE_PACKET_DT_DATA:
+  - RepDecompress
+  REP.PR_REP_SAVE_SPLIT_DATA:
+  - RepSplit
+  REP.PR_REP_TRACK_EXCEED_CHECK:
+  - RepIntegration
+  REP.PR_REP_UPDATE_PACKET_DATA:
+  - RepCompression
+  - RepDBLogW
+  - RepDecompress
+  - RepIntegration
+  - RepSplit
+  - RepTransfer
+  REP.PR_REP_UPDATE_RECORDS_STATUS:
+  - RepIntegration
+  REP.PR_REP_V2V_SAVE_PACKET_DETAILS:
+  - RepAcquisition
+  REP.PR_TRACKCHANGE_NEW_TYP:
+  - RepIntegration
+  REP.PR_TRACKCHANGE_VESSEL_TYP:
+  - RepIntegration
+  REP.PR_TRACKRECORD_UPD_TYP:
+  - RepIntegration
+  REP.PR_UPDATE_VESSEL_SETTINGS:
+  - RepAcquisition
+  - RepPacketCreation
+  REP.PR_VALIDATE_VSL_IMPORTQ:
+  - RepIntegration
+  REP.READ_PR_REP_IMPORT_QUEUE_DT:
+  - RepIntegration
+  REP.READ_PR_REP_IMPORT_Q_VSL_COMMTYPE:
+  - RepIntegration
+  REP.READ_TRACK_BY_GROUP_INFO:
+  - RepIntegration
+  REP.READ_UPD_PR_REP_IMPORT_QUEUE:
+  - RepIntegration
+  REP.REP_ACKN:
+  - RepAckn
+  REP.REP_ACKN_EXT_RECORD:
+  - RepAckn
+  REP.REP_CDT_Extracted_Log:
+  - RepIntegration
+  REP.REP_DownloadsBulkType:
+  - RepDBLogW
+  REP.REP_GETDOWNLOADS_TABLEID:
+  - RepAcquisition
+  REP.REP_GET_CURRENT_VESSEL_TRANSFER:
+  - RepAcquisition
+  REP.REP_GET_DOWNLOAD_PACKET_DETAILS:
+  - RepAcquisition
+  REP.REP_GET_PR_CHANNEL_DETAILS:
+  - RepAcquisition
+  REP.REP_INSERT_BULK_TRANSFER_STATUS:
+  - RepIntegration
+  REP.REP_MOV_TRANSFER_QUEUE_HIST:
+  - RepIntegration
+  REP.REP_PR_PACKET_STATUS_DATA_TYP:
+  - RepIntegration
+  REP.REP_READ_BULK_TRANSFER_STATUS:
+  - RepIntegration
+  REP.REP_READ_DEFAULT_CONFIG:
+  - RepDBLogW
+  REP.REP_READ_EXP_CONFIG_PATH:
+  - RepDBLogW
+  REP.REP_READ_IMP_CONFIG_PATH:
+  - RepDBLogW
+  REP.REP_TRANSFER_QUEUE_DATA_EXISTS:
+  - RepIntegration
+  REP.REP_TRANSFER_QUEUE_MOD_TYP:
+  - RepIntegration
+  REP.SAVE_IMPORT_PACKET_TYP:
+  - RepAcquisition
+  REP.SAVE_PR_REP_IMPORT_QUEUE:
+  - RepAcquisition
+  - RepDBLogW
+  - RepIntegration
+  REP.SAVE_REP_TRANSFER_QUEUE:
+  - RepIntegration
+  REP.SAVE_UPDATE_PR_IN_PACKET_DT:
+  - RepIntegration
+  REP.UPDATE_PR_REP_IMPORT_Q:
+  - RepAcquisition
+  - RepIntegration
+  REP.UPDATE_PR_REP_IMPORT_QUEUE_DT:
+  - RepAcquisition
+  - RepIntegration
+  REP.UPDATE_PR_REP_IMPORT_QUEUE_EXCEED:
+  - RepIntegration
+  REP.UPDATE_TRACK_CHANGE_STATUS:
+  - RepIntegration
+  REP.UPD_TRACK_RECORD_STATUS:
+  - RepIntegration
+  REP.rep_GetDOWNLOADS_TABLEID:
+  - RepAcquisition
+  '[REP].[GET_MISSING_PRIORITY_PACKETS]':
+  - RepAcquisition
+  '[REP].[GET_PRIORITY_FILE_ACKN]':
+  - RepDBLogW
+  '[REP].[GET_PRIORITY_FILE_STATUS]':
+  - RepDBLogW
+  '[REP].[GET_PR_COMRESSION_TYPE]':
+  - RepDBLogW
+  '[REP].[GET_PR_COUNTER_SETTINGS]':
+  - RepPacketCreation
+  '[REP].[GET_V2V_MASTER_LOG_DATA]':
+  - RepDBLogW
+  '[REP].[GET_V2V_MISSING_PACKET_STATUS]':
+  - RepAcquisition
+  '[REP].[GET_V2V_PACKET_COUNTER]':
+  - RepPacketInterim
+  '[REP].[GET_V2V_PACKET_COUNTER_IMPORT]':
+  - RepAcquisition
+  '[REP].[GET_V2V_RESEND_MASTER_LOG]':
+  - RepDBLogW
+  '[REP].[GET_V2V_RESEND_PACKET]':
+  - RepDBLogW
+  '[REP].[GET_V2V_SOURCE_PACKET_DATA]':
+  - RepDBLogW
+  '[REP].[GET_V2V_TRANSFER_MED_SIZE_RESTRICTION]':
+  - RepMedium
+  '[REP].[PR_GET_PARAM_DATA]':
+  - RepAckn
+  - RepCompression
+  - RepDBLogW
+  - RepIntegration
+  - RepMedium
+  - RepPacketCreation
+  - RepTrack
+  '[REP].[PR_GET_TRANSFER_DATA]':
+  - RepDBLogW
+  '[REP].[PR_GET_VESSEL_CODE]':
+  - RepDBLogW
+  '[REP].[PR_MASTER_LOG_DETAILS_TYP]':
+  - RepDBLogW
+  '[REP].[PR_PENDING_UPLOAD_FILE]':
+  - RepAzure
+  - RepDBLogW
+  '[REP].[PR_REP_GETPENDING_RECORDS]':
+  - RepProData
+  '[REP].[PR_REP_GET_ALL_SETTINGS]':
+  - RepAckn
+  - RepAcquisition
+  '[REP].[PR_REP_GET_ALL_TABLESETTINGS]':
+  - RepAckn
+  - RepIntegration
+  '[REP].[PR_REP_GET_CHANNEL_FLOW_SETTINGS]':
+  - RepIntegration
+  '[REP].[PR_REP_GET_CHANNEL_QUEUE_LIMIT]':
+  - RepQueueManage
+  '[REP].[PR_REP_GET_EXPORT_QUERY]':
+  - RepProData
+  '[REP].[PR_REP_GET_FILE_COUNTER]':
+  - RepProData
+  '[REP].[PR_REP_GET_IMPORT_QUERY]':
+  - RepSaveData
+  '[REP].[PR_REP_GET_PACKET_COUNTER]':
+  - RepAcquisition
+  - RepDBLogW
+  - RepPacketCreation
+  '[REP].[PR_REP_GET_PENDING_RECORD_DETAILS]':
+  - RepIntegration
+  '[REP].[PR_REP_GET_SETTINGS]':
+  - RepAzure
+  - RepDBLogW
+  - RepProData
+  '[REP].[PR_REP_GET_TOTAL_QUEUE_LIMIT]':
+  - RepQueueManage
+  '[REP].[PR_REP_GET_VESSEL_SETTINGS]':
+  - RepIntegration
+  '[REP].[PR_REP_IMPORT_SUBSCRIBER_LIST]':
+  - RepSaveData
+  '[REP].[PR_REP_IMPORT_SUBSCRIBER_LIST_DT_TYP]':
+  - RepSaveData
+  '[REP].[PR_REP_IMPORT_SUBSCRIBER_LIST_TYP]':
+  - RepSaveData
+  '[REP].[PR_REP_INSERT_CHAT_Q]':
+  - RepDBLogW
+  '[REP].[PR_REP_INSERT_MESSAGE_NOTIF_Q]':
+  - RepIntegration
+  '[REP].[PR_REP_INT_GETPENDING_RECORDS]':
+  - RepIntegration
+  '[REP].[PR_REP_LOG_SAVE]':
+  - RepDBLogW
+  '[REP].[PR_REP_OUT_FILE_DT]':
+  - RepPacketCreation
+  - RepProData
+  '[REP].[PR_REP_READ_AZURE_FILE_Q]':
+  - RepDBLogW
+  '[REP].[PR_REP_READ_MSG_NOTIF_Q]':
+  - RepIntegration
+  '[REP].[PR_REP_REPLICATIONDATA]':
+  - RepSaveData
+  '[REP].[PR_REP_SAVE_DATA_OPERATION]':
+  - RepSaveData
+  '[REP].[PR_REP_SAVE_IMPORT_PACKET_DATA]':
+  - RepAcquisition
+  '[REP].[PR_REP_SAVE_IMPORT_PACKET_DATA_BULK]':
+  - RepAcquisition
+  '[REP].[PR_REP_SAVE_LOG_DB]':
+  - RepDBLogW
+  '[REP].[PR_REP_SAVE_LOG_DB_BULK]':
+  - RepDBLogW
+  '[REP].[PR_REP_SAVE_LOG_DB_BULK_TYP]':
+  - RepDBLogW
+  '[REP].[PR_REP_SAVE_PACKET_DATA]':
+  - RepPacketCreation
+  '[REP].[PR_REP_SAVE_PROCESS_DATA]':
+  - RepProData
+  '[REP].[PR_REP_UPDATE_LAST_EXPORT_IMPORT]':
+  - RepIntegration
+  '[REP].[PR_REP_UPDATE_MSG_NOTIF_Q]':
+  - RepIntegration
+  '[REP].[PR_REP_UPDATE_PACKET_DATA_BULK]':
+  - RepPacketInterim
+  '[REP].[PR_REP_UPDATE_RECORDS_STATUS]':
+  - RepProData
+  '[REP].[PR_REP_UPDATE_STATUS]':
+  - RepSaveData
+  '[REP].[PR_RESEND_UPDATE_PACKET_STATUS]':
+  - RepDBLogW
+  '[REP].[PR_SAVE_ERROR_LOG]':
+  - RepAckn
+  '[REP].[PR_TRACKCHANGE_NEW_TYP]':
+  - RepTrack
+  '[REP].[PR_TRACKCHANGE_NEW_TYP_V2V]':
+  - RepAckn
+  - RepAcquisition
+  - RepDecompress
+  '[REP].[PR_TRACKCHANGE_TYP]':
+  - RepAckn
+  - RepAcquisition
+  - RepDBLogW
+  - RepDecompress
+  - RepMedium
+  - RepTrack
+  '[REP].[PR_TRACKCHANGE_VESSEL_TYP]':
+  - RepIntegration
+  - RepProData
+  '[REP].[PR_UPDATE_VESSEL_SETTINGS]':
+  - RepAcquisition
+  - RepDBLogW
+  - RepPacketCreation
+  '[REP].[READ_COMMON_PARAMS_VALUE]':
+  - RepAckn
+  '[REP].[READ_VESSEL_LIST]':
+  - RepAzure
+  - RepDBLogW
+  '[REP].[REP_ACKN_INSERT_BULK]':
+  - RepAckn
+  '[REP].[REP_AZURE_DOWNLOAD_DATA_EXISTS]':
+  - RepDBLogW
+  '[REP].[REP_AZURE_RES_DATA_EXISTS]':
+  - RepDBLogW
+  '[REP].[REP_GETFILESTODOWNLOAD]':
+  - RepDBLogW
+  '[REP].[REP_GET_AZURE_SBUS_CREDENTIALS_V2V]':
+  - RepDBLogW
+  '[REP].[REP_GET_AZURE_SETTINGS]':
+  - RepAzure
+  - RepDBLogW
+  '[REP].[REP_GET_CURRENT_VESSEL_TRANSFER]':
+  - RepAcquisition
+  '[REP].[REP_GET_DOWNLOAD_DATA_BY_ID]':
+  - RepDBLogW
+  '[REP].[REP_GET_PR_CHANNEL_BY_NAME]':
+  - RepIntegration
+  '[REP].[REP_GET_PR_CHANNEL_DETAILS]':
+  - RepAcquisition
+  '[REP].[REP_GET_QUEUE_NAME]':
+  - RepDBLogW
+  '[REP].[REP_GET_QUEUE_NAME_FOR_RECEIVER_V2V]':
+  - RepDBLogW
+  '[REP].[REP_GET_SBUS_SETTINGS]':
+  - RepDBLogW
+  '[REP].[REP_INSERT_AZURE_RES_UPLOAD]':
+  - RepDBLogW
+  '[REP].[REP_INSERT_DOWNLOADS_BULK]':
+  - RepDBLogW
+  '[REP].[REP_INSERT_UPLOAD_FILE]':
+  - RepAzure
+  - RepDBLogW
+  '[REP].[REP_INSERT_UPLOAD_FILE_BULK]':
+  - RepAzure
+  - RepDBLogW
+  '[REP].[REP_INS_DES_VALIDATE_Q_ITEM]':
+  - RepDBLogW
+  '[REP].[REP_MISSING_PACKET_BULK_SAVE]':
+  - RepDBLogW
+  '[REP].[REP_PR_GET_TRACKCHANGE_DETAILS_V2V]':
+  - RepDBLogW
+  '[REP].[REP_PR_READ_QUEUE_NAME]':
+  - RepDBLogW
+  '[REP].[REP_PR_READ_SUBSCRIBER_LIST]':
+  - RepDBLogW
+  '[REP].[REP_PR_SUBSCRIBER_LIST_LOG_TYP]':
+  - RepDBLogW
+  '[REP].[REP_READ_AZURE_RES_UPLOAD]':
+  - RepDBLogW
+  '[REP].[REP_READ_MISSING_PACKET_BULK]':
+  - RepDBLogW
+  '[REP].[REP_READ_PR_REP_LOG]':
+  - RepDBLogW
+  '[REP].[REP_READ_TABLESETT_DETAILS_BY_ID]':
+  - RepDBLogW
+  - RepIntegration
+  '[REP].[REP_READ_TABLE_NOTIF_QUEUE]':
+  - RepIntegration
+  '[REP].[REP_READ_TRANSFER_QUEUE_DATA]':
+  - RepIntegration
+  '[REP].[REP_SAVE_MASTER_LOG]':
+  - RepDBLogW
+  '[REP].[REP_SAVE_MASTER_LOG_RECEIVE]':
+  - RepDBLogW
+  '[REP].[REP_SAVE_NOTIFICATION_ERROR_LOG]':
+  - RepDBLogW
+  '[REP].[REP_SAVE_NOTIFICATION_LOG]':
+  - RepDBLogW
+  - RepSaveData
+  '[REP].[REP_UPDATE_AZURE_DOWNLOAD_Q]':
+  - RepDBLogW
+  '[REP].[REP_UPDATE_AZURE_RES_UPLOAD]':
+  - RepDBLogW
+  '[REP].[REP_UPDATE_TABLE_NOTIF_QUEUE]':
+  - RepIntegration
+  '[REP].[REP_UPDATE_TRANSFER_QUEUE]':
+  - RepIntegration
+  '[REP].[REP_UpdateDownloads]':
+  - RepDBLogW
+  '[REP].[REP_UpdateDownloads_V2V]':
+  - RepDBLogW
+  '[REP].[REP_V2V_CHECK_COMMUNICATION_ENABLED]':
+  - RepIntegration
+  '[REP].[REP_V2V_GET_ACTIVE_VESSELS]':
+  - RepIntegration
+  - RepTrack
+  '[REP].[REP_V2V_UNIQUE_OBJECT_ID]':
+  - RepIntegration
+  '[REP].[REP_V2V_VALIDATE_READ_QUEUE_DATA]':
+  - RepIntegration
+  '[REP].[SAVE_EXT_PACKET_DETAILS]':
+  - RepDBLogW
+  - RepPacketCreation
+  '[REP].[SAVE_REP_TABLE_NOTIF_QUEUE]':
+  - RepIntegration
+  '[REP].[SAVE_REP_TRANSFER_QUEUE]':
+  - RepIntegration
+  '[REP].[SAVE_SOURCE_SUB_DETAILS]':
+  - RepDBLogW
+  - RepPacketCreation
+  '[REP].[SAVE_TRACK_CHANGE_FILE]':
+  - RepTrack
+  '[REP].[SAVE_TRACK_CHANGE_RECORD]':
+  - RepAckn
+  - RepAcquisition
+  - RepDecompress
+  - RepTrack
+  '[REP].[SAVE_TRACK_CHANGE_RECORD_V2V]':
+  - RepAckn
+  - RepAcquisition
+  - RepDecompress
+  - RepTrack
+  '[REP].[SAVE_V2V_OUT_PACKET_HD]':
+  - RepPacketInterim
+  '[REP].[UPDATE_EXT_PACKET_DATA]':
+  - RepCompression
+  - RepDBLogW
+  '[REP].[UPDATE_EXT_PACKET_DATA_BULK]':
+  - RepPacketInterim
+  '[REP].[UPDATE_PR_COUNTER_SETTINGS]':
+  - RepPacketCreation
+  '[REP].[UPDATE_TRACK_CHANGE_STATUS]':
+  - RepTrack
+  '[REP].[V2V_RESEND_LOG_OPERATIONS]':
+  - RepDBLogW
+  '[Rep].[PR_GET_ACKN_SETTINGS]':
+  - RepAckn
+  '[Rep].[PR_GET_ACKN_SETTINGS_TYP]':
+  - RepAckn
+  '[Rep].[PR_GET_TRANSFER_DATA]':
+  - RepDBLogW
+  '[Rep].[PR_REP_V2V_SAVE_PACKET_DETAILS]':
+  - RepAcquisition
+  '[Rep].[PR_SAVE_ACKN_DATA_TYP]':
+  - RepAckn
+  '[Rep].[PR_SAVE_ERROR_LOG]':
+  - RepTransfer
+  '[Rep].[PR_TRACKCHANGE_NEW_TYP_V2V]':
+  - RepTrack
+  '[Rep].[PR_UPLOAD_FILE_BULK]':
+  - RepAzure
+  - RepDBLogW
+  '[Rep].[REP_GET_DOWNLOAD_PACKET_DETAILS]':
+  - RepAcquisition
+  '[Rep].[REP_PR_EXT_PACKET_TYP]':
+  - RepDBLogW
+  - RepPacketCreation
+  '[Rep].[REP_SBUS_NOTIFICATION_INSERT]':
+  - RepDBLogW
+  '[Rep].[REP_SBUS_NOTIFICATION_INSERT_V2V]':
+  - RepDBLogW
+  '[Rep].[SAVE_SERVICE_STATUS]':
+  - RepDBLogW
+  '[Rep].[SAVE_TRACK_CHANGE_FILE_V2V]':
+  - RepTrack
+db_tables:
+- COMMON.CO_PARAMETERS
+- COMMON.PR_REP_VESSEL_SETTINGS
+- REP.COMMUNICATION_TYPE
+- REP.PR_CHANNEL_SETTINGS
+- REP.PR_CO_PARAMETERS
+- REP.PR_LOG_DB
+- REP.PR_PACKET_COUNTER_SETTINGS
+- REP.PR_PRIORITY_CHANNEL_FLOW_SETTINGS
+- REP.PR_PRIORITY_QUEUE_SETTINGS
+- REP.PR_REPLICATED_CHAT_QUEUE
+- REP.PR_REP_IMPORT_QUEUE
+- REP.PR_REP_IMPORT_QUEUE_DT
+- REP.PR_REP_IMPORT_QUEUE_HISTORY
+- REP.PR_REP_IN_PACKET_DT
+- REP.PR_REP_IN_PACKET_HD
+- REP.PR_REP_LOG
+- REP.PR_REP_MESSAGE_NOTIF_QUEUE
+- REP.PR_REP_MISSING_PACKETS
+- REP.PR_REP_OUT_FILE_DT
+- REP.PR_REP_OUT_FILE_HD
+- REP.PR_REP_OUT_PACKET_DT
+- REP.PR_REP_OUT_PACKET_HD
+- REP.PR_REP_TRANSFER_MASTER
+- REP.PR_REP_VESSEL_SETTINGS
+- REP.PR_RESEND_LOG
+- REP.PR_RESEND_QUEUE
+- REP.PR_SAVE_DATA_RECORDS
+- REP.PR_SERVICE_DETAILS
+- REP.PR_TRACKCHANGE_RECORDS
+- REP.PR_TRACKCHANGE_VESSELS
+- REP.PR_ZIP_SPLITS
+- REP.REP_ACKN
+- REP.REP_AZURE_RES_UPLOAD
+- REP.REP_AZURE_RES_UPLOAD_HISTORY
+- REP.REP_BULK_TRANSFER_STATUS
+- REP.REP_DOWNLOADS
+- REP.REP_DOWNLOADS_HISTORY
+- REP.REP_NOTIFICATION_LOG
+- REP.REP_PRIORITY_TABLE_SETTINGS
+- REP.REP_PR_PACKET_SOURCE
+- REP.REP_PR_PACKET_SOURCE_DETAILS
+- REP.REP_PR_STORAGE_CREDENTIALS
+- REP.REP_PR_SUBSCRIBER_LIST
+- REP.REP_PR_SUBSCRIBER_LIST_DT
+- REP.REP_SBUS_NOTIFICATION
+- REP.REP_SERVICEBUS_CREDENTIALS
+- REP.REP_SERVICE_BUS_MASTER_SETTINGS
+- REP.REP_SERVICE_BUS_TRANSACTION_SETTINGS
+- REP.REP_SERVICE_OPERATION_STATUS
+- REP.REP_TABLE_NOTIF_QUEUE
+- REP.REP_TRANSFER_QUEUE
+- REP.REP_TRANSFER_QUEUE_HISTORY
+- REP.REP_TYPE_TRANSFER_MEDIUM
+- REP.REP_UPLOAD_FILE
+- REP.REP_V2V_MASTER_LOG
+- REP.REP_V2V_MASTER_LOG_DETAILS
+- REP.V2V_RESEND_LOG
+- REP.V2V_STATUS_HIS
+db_procedures_in_scripts:
+- REP.GET_MISSING_PRIORITY_PACKETS
+- REP.GET_PRIORITY_FILE_ACKN
+- REP.GET_PRIORITY_FILE_STATUS
+- REP.GET_PRIORITY_REPLICATION_SETTINGS
+- REP.GET_PR_COMRESSION_TYPE
+- REP.GET_V2V_MASTER_LOG_DATA
+- REP.GET_V2V_MISSING_PACKET_STATUS
+- REP.GET_V2V_PACKET_COUNTER
+- REP.GET_V2V_PACKET_COUNTER_IMPORT
+- REP.GET_V2V_RESEND_MASTER_LOG
+- REP.GET_V2V_RESEND_PACKET
+- REP.GET_V2V_SOURCE_PACKET_DATA
+- REP.GET_V2V_TRANSFER_MED_SIZE_RESTRICTION
+- REP.PRIORITY_RESEND_DATA
+- REP.PR_GET_ACKN_SETTINGS
+- REP.PR_GET_PACKET_DATA
+- REP.PR_GET_PARAM_DATA
+- REP.PR_GET_RESEND_PACKET
+- REP.PR_GET_TRANSFER_DATA
+- REP.PR_GET_VESSEL_CODE
+- REP.PR_PACKET_TRANSFER_INFO
+- REP.PR_PENDING_UPLOAD_FILE
+- REP.PR_READ_SPLIT_DATA
+- REP.PR_REP_EXPORT_SUBSCRIBER_LIST
+- REP.PR_REP_EXPORT_SUBSCRIBER_LIST_DT
+- REP.PR_REP_GETPENDING_RECORDS
+- REP.PR_REP_GET_ALL_SETTINGS
+- REP.PR_REP_GET_ALL_TABLESETTINGS
+- REP.PR_REP_GET_CHANNEL_FLOW_SETTINGS
+- REP.PR_REP_GET_CHANNEL_QUEUE_LIMIT
+- REP.PR_REP_GET_EXPORT_QUERY
+- REP.PR_REP_GET_FILE_COUNTER
+- REP.PR_REP_GET_IMPORT_QUERY
+- REP.PR_REP_GET_PACKET_COUNTER
+- REP.PR_REP_GET_PENDING_RECORD_DETAILS
+- REP.PR_REP_GET_SETTINGS
+- REP.PR_REP_GET_TOTAL_QUEUE_LIMIT
+- REP.PR_REP_GET_VESSEL_SETTINGS
+- REP.PR_REP_IMPORT_MOVE_HISTQ
+- REP.PR_REP_IMPORT_SUBSCRIBER_LIST
+- REP.PR_REP_INSERT_CHAT_Q
+- REP.PR_REP_INSERT_MESSAGE_NOTIF_Q
+- REP.PR_REP_INT_GETPENDING_RECORDS
+- REP.PR_REP_LOG_SAVE
+- REP.PR_REP_MISSING_PACKETS_OPERATIONS
+- REP.PR_REP_MOV_AZURE_RES_HIST
+- REP.PR_REP_MOV_INS_AZURE_DOWN_HIST
+- REP.PR_REP_PACKET_UPDATE_BY_ID
+- REP.PR_REP_READ_ALL_CHANNELS
+- REP.PR_REP_READ_AZURE_FILE_Q
+- REP.PR_REP_READ_MSG_NOTIF_Q
+- REP.PR_REP_READ_PENDING_EXPORT
+- REP.PR_REP_READ_TRACK_RECORDS
+- REP.PR_REP_READ_UPD_AZURE_FILE_Q
+- REP.PR_REP_SAVE_DATA_OPERATION
+- REP.PR_REP_SAVE_IMPORT_PACKET_DATA
+- REP.PR_REP_SAVE_IMPORT_PACKET_DATA_BULK
+- REP.PR_REP_SAVE_LOG_DB
+- REP.PR_REP_SAVE_LOG_DB_BULK
+- REP.PR_REP_SAVE_PACKET_DATA
+- REP.PR_REP_SAVE_PACKET_DT_DATA
+- REP.PR_REP_SAVE_PROCESS_DATA
+- REP.PR_REP_SAVE_SPLIT_DATA
+- REP.PR_REP_TRACK_EXCEED_CHECK
+- REP.PR_REP_UPDATE_LAST_EXPORT_IMPORT
+- REP.PR_REP_UPDATE_MSG_NOTIF_Q
+- REP.PR_REP_UPDATE_PACKET_DATA
+- REP.PR_REP_UPDATE_PACKET_DATA_BULK
+- REP.PR_REP_UPDATE_RECORDS_STATUS
+- REP.PR_REP_V2V_SAVE_PACKET_DETAILS
+- REP.PR_RESEND_UPDATE_PACKET_STATUS
+- REP.PR_SAVE_ERROR_LOG
+- REP.PR_UPDATE_VESSEL_SETTINGS
+- REP.PR_VALIDATE_VSL_IMPORTQ
+- REP.READ_PR_REP_IMPORT_QUEUE_DT
+- REP.READ_PR_REP_IMPORT_Q_VSL_COMMTYPE
+- REP.READ_UPD_PR_REP_IMPORT_QUEUE
+- REP.READ_VESSEL_LIST
+- REP.REP_ACKN_INSERT_BULK
+- REP.REP_AZURE_DOWNLOAD_DATA_EXISTS
+- REP.REP_AZURE_RES_DATA_EXISTS
+- REP.REP_GETDOWNLOADS_TABLEID
+- REP.REP_GETFILESTODOWNLOAD
+- REP.REP_GET_AZURE_SBUS_CREDENTIALS_V2V
+- REP.REP_GET_AZURE_SETTINGS
+- REP.REP_GET_CURRENT_VESSEL_TRANSFER
+- REP.REP_GET_DOWNLOAD_DATA_BY_ID
+- REP.REP_GET_DOWNLOAD_PACKET_DETAILS
+- REP.REP_GET_PR_CHANNEL_BY_NAME
+- REP.REP_GET_PR_CHANNEL_DETAILS
+- REP.REP_GET_QUEUE_NAME
+- REP.REP_GET_QUEUE_NAME_FOR_RECEIVER_V2V
+- REP.REP_GET_SBUS_SETTINGS
+- REP.REP_INSERT_AZURE_RES_UPLOAD
+- REP.REP_INSERT_BULK_TRANSFER_STATUS
+- REP.REP_INSERT_DOWNLOADS_BULK
+- REP.REP_INSERT_UPLOAD_FILE
+- REP.REP_INSERT_UPLOAD_FILE_BULK
+- REP.REP_MISSING_PACKET_BULK_SAVE
+- REP.REP_MOV_TRANSFER_QUEUE_HIST
+- REP.REP_PR_GET_TRACKCHANGE_DETAILS_V2V
+- REP.REP_READ_AZURE_RES_UPLOAD
+- REP.REP_READ_BULK_TRANSFER_STATUS
+- REP.REP_READ_MISSING_PACKET_BULK
+- REP.REP_READ_PR_REP_LOG
+- REP.REP_READ_TABLESETT_DETAILS_BY_ID
+- REP.REP_READ_TABLE_NOTIF_QUEUE
+- REP.REP_READ_TRANSFER_QUEUE_DATA
+- REP.REP_READ_UPD_AZURE_RES_UPLOAD
+- REP.REP_SAVE_MASTER_LOG
+- REP.REP_SAVE_MASTER_LOG_RECEIVE
+- REP.REP_SAVE_NOTIFICATION_ERROR_LOG
+- REP.REP_SAVE_NOTIFICATION_LOG
+- REP.REP_SBUS_NOTIFICATION_INSERT
+- REP.REP_SBUS_NOTIFICATION_INSERT_V2V
+- REP.REP_TRANSFER_QUEUE_DATA_EXISTS
+- REP.REP_UPDATEDOWNLOADS
+- REP.REP_UPDATEDOWNLOADS_V2V
+- REP.REP_UPDATE_AZURE_DOWNLOAD_Q
+- REP.REP_UPDATE_AZURE_RES_CHECKSUM
+- REP.REP_UPDATE_AZURE_RES_INFO
+- REP.REP_UPDATE_AZURE_RES_UPLOAD
+- REP.REP_UPDATE_TABLE_NOTIF_QUEUE
+- REP.REP_UPDATE_TRANSFER_QUEUE
+- REP.REP_V2V_CHECK_COMMUNICATION_ENABLED
+- REP.REP_V2V_GENERATE_QUEUE_NAMES
+- REP.REP_V2V_GET_ACTIVE_VESSELS
+- REP.REP_V2V_VALIDATE_READ_QUEUE_DATA
+- REP.SAVE_EXT_PACKET_DETAILS
+- REP.SAVE_PR_REP_IMPORT_QUEUE
+- REP.SAVE_REP_TABLE_NOTIF_QUEUE
+- REP.SAVE_REP_TRANSFER_QUEUE
+- REP.SAVE_SERVICE_STATUS
+- REP.SAVE_SOURCE_SUB_DETAILS
+- REP.SAVE_TRACK_CHANGE_FILE
+- REP.SAVE_TRACK_CHANGE_FILE_V2V
+- REP.SAVE_TRACK_CHANGE_RECORD
+- REP.SAVE_TRACK_CHANGE_RECORD_V2V
+- REP.SAVE_UPDATE_PR_IN_PACKET_DT
+- REP.SAVE_V2V_OUT_PACKET_HD
+- REP.UPDATE_EXT_PACKET_DATA
+- REP.UPDATE_EXT_PACKET_DATA_BULK
+- REP.UPDATE_PR_REP_IMPORT_Q
+- REP.UPDATE_PR_REP_IMPORT_QUEUE_DT
+- REP.UPDATE_PR_REP_IMPORT_QUEUE_EXCEED
+- REP.UPDATE_TRACK_CHANGE_STATUS
+- REP.UPD_TRACK_RECORD_STATUS
+- REP.V2V_RESEND_LOG_OPERATIONS

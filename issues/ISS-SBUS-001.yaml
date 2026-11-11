@@ -1,0 +1,112 @@
+id: ISS-SBUS-001
+title: "Service Bus listener not running (SmartSync receiver down)"
+status: draft
+author: claude
+reviewed_by: ""
+last_verified: 2026-11-11
+mechanism: [smartsync]
+runs_on: [office, vessel]
+components: [RepSbus]
+error_types: []
+related_docs: [CMP-REPSBUS, FLW-PR-EXPORT, FLW-PR-IMPORT]
+
+symptoms:
+  - Packets are uploaded by the sender but the receiver never downloads them.
+  - Sender keeps resending; no acknowledgement arrives.
+  - Dashboard service check shows RepSbus receiver status not running.
+
+phrasings:
+  - service bus not working
+  - sbus listener down
+  - service bus listener is not running
+  - receiver not running on vessel
+  - vessel not receiving notifications
+  - office not getting acknowledgement from vessel
+  - no ackn from vessel
+  - packets uploaded but not downloaded
+  - smartsync not receiving
+  - smart sync stuck
+  - replication stuck after internet came back
+  - sbus receiver stopped
+  - RepSbus not processing messages
+  - messages piling up in queue
+  - queue has messages but nothing happens
+  - azure service bus error on ship
+  - service bus access failed
+  - internet not available in sbus log
+  - sbus restart needed
+  - have to restart sbus every day
+  - listener keeps stopping
+  - vessel offline in replication but internet ok
+  - notifications not reaching office
+  - ship side not picking files
+  - no PACKET_TRANSFER received
+  - processor is not processing
+  - receiver start failed
+  - service bus port blocked
+  - 5671 blocked firewall
+  - sbus log shows ErrorHandler exception
+  - sync from office to vessel not happening
+  - data not coming to vessel
+  - resend keeps happening
+  - acknowledgement missing for priority packets
+
+signatures:
+  - log_file: SbusLog_.txt
+    regex: 'Service bus listener is not running due to (?<reason>.+)'
+    source: RepSbus/MariApps.PAL.Rep.Sbus.Service/WorkerService.cs#L109
+    confidence: high
+  - log_file: SbusLog_.txt
+    regex: '\| Internet not available'
+    source: RepSbus/MariApps.PAL.Rep.Sbus.Service/BL/ServiceBusOperation.cs#L73
+    confidence: high
+  - log_file: SbusLog_.txt
+    regex: 'Service Bus Access failed with error (?<error>.+)'
+    source: RepSbus/MariApps.PAL.Rep.Sbus.Service/BL/ServiceBusOperation.cs#L101
+    confidence: high
+  - log_file: SbusLog_.txt
+    regex: 'Processor is not processing'
+    source: RepSbus/MariApps.PAL.Rep.Sbus.Service/BL/ServiceBusOperation.cs#L526
+    confidence: medium
+  - log_file: SbusLog_.txt
+    regex: 'Receiver start failed with status'
+    source: RepSbus/MariApps.PAL.Rep.Sbus.Service/BL/ServiceBusOperation.cs#L155
+    confidence: medium
+  - log_file: SbusLog_.txt
+    regex: 'Service is not ready to start listener due Service Intital Status being'
+    source: RepSbus/MariApps.PAL.Rep.Sbus.Service/BL/ServiceBusOperation.cs#L86
+    confidence: medium
+
+distinguishing_checks:
+  - check: "Call RepSbus `SbusSend/ReceiverStatus` (or the dashboard service check). Not running → this issue."
+    if_true: "this issue"
+    if_false: "listener is up; check RepAzure download on the receiver (ISS-AZURE-001)"
+  - check: "Does the reason in the log mention credentials, queue name or settings not found?"
+    if_true: "ISS-SBUS-002 (configuration), not connectivity"
+    if_false: "this issue"
+  - check: "Does `Internet not available` appear?"
+    if_true: "network problem on that machine; fix connectivity first"
+    if_false: "continue with solution A"
+
+solutions:
+  - id: SOL-SBUS-001-A
+    title: "Restore connectivity and restart the receiver"
+    when: "Log shows listener not running, internet not available, or access failed with a network/timeout error."
+    steps:
+      - do: "Confirm the machine has internet access and can reach the Service Bus namespace on the AMQP port (configured in RepIntegration `ConfigEvaluationOptions:ServiceBusPort`). Run the dashboard \"Evaluate configuration\" check if available."
+        who: support
+        requires_approval: false
+        verify: "Evaluation shows Service Bus port reachable."
+      - do: "If AMQP is blocked by the vessel firewall, ask vessel IT to open it, or ask dev whether `ServiceBusSettings:UseWebSockets` should be enabled for this vessel."
+        who: vessel IT | dev
+        requires_approval: true
+        verify: "Port reachable or WebSockets enabled."
+      - do: "Restart the receiver with `SbusSend/RestartReceiver` (or restart the RepSbus service)."
+        who: support
+        requires_approval: true
+        verify: "Within one `ReceiverCheckIntervalInMinutes` cycle, no new \"listener is not running\" lines and `ReceiverStatus` reports running."
+      - do: "Check that pending downloads start on the receiver (RepAzure log shows download activity)."
+        who: support
+        requires_approval: false
+        verify: "Packets arrive and acknowledgements reach the sender."
+    escalate_if: "Listener stops again within a day, or `ErrorHandler:` exceptions repeat with the same message."

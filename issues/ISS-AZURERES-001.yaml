@@ -1,0 +1,92 @@
+id: ISS-AZURERES-001
+title: "Azure upload blocked by slow or unstable network (chunk size zero)"
+status: draft
+author: claude
+reviewed_by: ""
+last_verified: 2026-11-11
+mechanism: [smartsync]
+runs_on: [vessel, office]
+components: [RepAzureRes]
+error_types: []
+related_docs: [CMP-REPAZURERES, FLW-PR-EXPORT]
+
+symptoms:
+  - Packets sit in the outbox and are never uploaded, typically on vessels with poor connectivity.
+  - Large packets never complete while small ones do.
+
+phrasings:
+  - upload stuck on vessel
+  - files not uploading to azure
+  - outbox full not uploading
+  - chunk size is zero
+  - network speed is low cannot proceed with upload
+  - speed test failed
+  - slow vsat upload not working
+  - bandwidth too low for replication
+  - large packet upload never finishes
+  - upload keeps restarting
+  - resume upload not working
+  - invalid block metadata
+  - regenerated block metadata still invalid
+  - json file not created
+  - heartbeat update failed
+  - upload is failed for file
+  - azure res stuck
+  - AzureRes pending count not updating
+  - upload pending count reset
+  - vessel data not reaching office
+  - satellite link replication slow
+  - files in OUT PR OUTBOX not moving
+
+signatures:
+  - log_file: AzureResumeLog_.txt
+    regex: 'Chunk size is zero, network speed is low cannot proceed with upload'
+    source: RepAzureRes/MariApps.PAL.Rep.Azure.Res.Service/BL/UploadProcessBL.cs#L158
+    confidence: high
+  - log_file: AzureResumeLog_.txt
+    regex: 'Speed test failed, assuming very slow connection'
+    source: RepAzureRes/MariApps.PAL.Rep.Azure.Res.Service/BL/UploadProcessBL.cs#L1215
+    confidence: medium
+  - log_file: AzureResumeLog_.txt
+    regex: 'Upload is failed for file (?<file>\S+)'
+    source: RepAzureRes/MariApps.PAL.Rep.Azure.Res.Service/BL/UploadProcessBL.cs#L831
+    confidence: medium
+  - log_file: AzureResumeLog_.txt
+    regex: 'Regenerated block metadata is still invalid for file (?<file>\S+)'
+    source: RepAzureRes/MariApps.PAL.Rep.Azure.Res.Service/BL/UploadProcessBL.cs#L508
+    confidence: high
+  - log_file: AzureResumeLog_.txt
+    regex: 'Azure Upload Pending Count has not been updated in 6 hours, resetting'
+    source: RepAzureRes/MariApps.PAL.Rep.Azure.Res.Service/BL/CommonOperationBL.cs#L477
+    confidence: low
+
+distinguishing_checks:
+  - check: "Do small packets upload while large ones fail?"
+    if_true: "bandwidth/stability — solution A"
+    if_false: "if nothing uploads at all, check credentials (ISS-AZURE-002)"
+  - check: "Is \"Regenerated block metadata is still invalid\" present for the same file repeatedly?"
+    if_true: "corrupt resume state for that file — solution B"
+    if_false: "solution A"
+
+solutions:
+  - id: SOL-AZURERES-001-A
+    title: "Wait out or improve the link"
+    when: "Chunk size zero / speed test failures."
+    steps:
+      - do: "Check the vessel's current link (VSAT/4G) with vessel IT; uploads resume automatically when speed rises above `AzureSettings:MinUploadSpeedInKBps`."
+        who: vessel IT
+        requires_approval: false
+        verify: "Log shows uploads progressing."
+      - do: "If the link is permanently slow, ask dev to review `MinUploadSpeedInKBps` / `MaxChunkSizeInKB` for this vessel."
+        who: dev
+        requires_approval: true
+        verify: "Uploads complete at the lower speed."
+  - id: SOL-AZURERES-001-B
+    title: "Reset resume state for one file"
+    when: "Block metadata stays invalid for the same file."
+    steps:
+      - do: "Dev confirms the file still exists in the outbox and resets its upload record/JSON so it uploads from scratch."
+        who: dev
+        requires_approval: true
+        verify: "File uploads and callback runs."
+    escalate_if: "Many files show invalid metadata — possible disk or antivirus interference."
